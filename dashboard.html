@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analyseur de Flux de Monitoring RAID / OCAM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .badge-ok { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-nok { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-progress { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-other { background-color: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+
+    #richPasteArea:empty:before {
+      content: attr(data-placeholder);
+      color: #94a3b8;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 antialiased font-sans">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- En-tête -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-700">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">
+              Analyseur de Statuts de Flux & Monitoring
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400">
+              Support natif des copier-coller depuis <b>Outlook, Word, Webmail</b> (HTML riche ou texte brut)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Boutons d'exemples rapides -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs text-slate-400">Exemples de test :</span>
+        <button onclick="loadExample(1)" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+          Exemple 1 (Fraud Admin)
+        </button>
+        <button onclick="loadExample(2)" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+          Exemple 2 (ORDC)
+        </button>
+        <button onclick="loadExample(3)" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+          Exemple 3 (OM OBF)
+        </button>
+      </div>
+    </header>
+
+    <!-- Zone de Collage Enrichie (Compatible Word / Outlook / HTML / Plaintext) -->
+    <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold text-white">📋 Zone de collage (Conserve le format Word & Outlook)</span>
+          <span class="px-2 py-0.5 text-[11px] font-medium rounded-md bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            Format riche supporté
+          </span>
+        </div>
+        <button onclick="clearArea()" class="text-xs text-rose-400 hover:text-rose-300 transition-colors">
+          Effacer
+        </button>
+      </div>
+
+      <!-- Div éditable : conserve le HTML et les tableaux Word/Outlook lors du collage -->
+      <div id="richPasteArea"
+           contenteditable="true"
+           data-placeholder="Faites simplement Ctrl+V (ou Cmd+V) ici pour coller l'e-mail complet copié depuis Outlook ou Word..."
+           class="w-full min-h-[140px] max-h-[300px] overflow-y-auto p-4 text-xs md:text-sm font-sans bg-slate-950 text-slate-100 border-2 border-dashed border-blue-500/40 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"></div>
+
+      <div id="parseStatus" class="text-xs text-slate-400 flex items-center justify-between">
+        <span>En attente de collage... Faites <b>Cmd+V</b> ou <b>Ctrl+V</b> dans le cadre ci-dessus.</span>
+      </div>
+    </div>
+
+    <!-- Section Résultats & Tableau de Bord (masquée si pas de données) -->
+    <div id="resultsSection" class="space-y-6 hidden">
+
+      <!-- Métriques KPIs -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+        <!-- Total -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-4">
+          <div class="text-xs text-slate-400">Total Flux</div>
+          <div id="kpiTotal" class="text-2xl font-bold mt-1 text-white">0</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Analysés</div>
+        </div>
+
+        <!-- OK -->
+        <div class="bg-slate-800/80 border border-emerald-500/30 rounded-xl p-4 cursor-pointer hover:border-emerald-500/60 transition-all" onclick="setFilter('OK')">
+          <div class="text-xs text-emerald-400 flex items-center justify-between">
+            <span>Succès (OK)</span>
+            <span>✅</span>
+          </div>
+          <div id="kpiOk" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
+          <div id="kpiOkPct" class="text-[11px] text-emerald-500/80 mt-0.5">0%</div>
+        </div>
+
+        <!-- NOK -->
+        <div class="bg-slate-800/80 border border-rose-500/30 rounded-xl p-4 cursor-pointer hover:border-rose-500/60 transition-all" onclick="setFilter('NOK')">
+          <div class="text-xs text-rose-400 flex items-center justify-between">
+            <span>Erreurs (NOK)</span>
+            <span>❌</span>
+          </div>
+          <div id="kpiNok" class="text-2xl font-bold text-rose-400 mt-1">0</div>
+          <div id="kpiNokPct" class="text-[11px] text-rose-500/80 mt-0.5">0%</div>
+        </div>
+
+        <!-- En cours -->
+        <div class="bg-slate-800/80 border border-amber-500/30 rounded-xl p-4 cursor-pointer hover:border-amber-500/60 transition-all" onclick="setFilter('EN_COURS')">
+          <div class="text-xs text-amber-400 flex items-center justify-between">
+            <span>En cours</span>
+            <span>⏳</span>
+          </div>
+          <div id="kpiProgress" class="text-2xl font-bold text-amber-400 mt-1">0</div>
+          <div id="kpiProgressPct" class="text-[11px] text-amber-500/80 mt-0.5">0%</div>
+        </div>
+
+        <!-- Taux de Disponibilité -->
+        <div class="col-span-2 md:col-span-1 bg-slate-800/80 border border-blue-500/30 rounded-xl p-4">
+          <div class="text-xs text-blue-400">Taux de Réussite</div>
+          <div id="kpiRate" class="text-2xl font-bold text-blue-400 mt-1">0%</div>
+          <div class="text-[11px] text-blue-500/80 mt-0.5">Disponibilité globale</div>
+        </div>
+      </div>
+
+      <!-- Filtres, Recherche et Export -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          <!-- Filtres de statut -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <button onclick="setFilter('ALL')" id="tabALL" class="px-3 py-1.5 text-xs rounded-lg font-medium bg-blue-600 text-white transition-all ring-2 ring-blue-400">
+              Tous (<span id="countALL">0</span>)
+            </button>
+            <button onclick="setFilter('NOK')" id="tabNOK" class="px-3 py-1.5 text-xs rounded-lg font-medium bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 border border-rose-500/30 transition-all">
+              ❌ NOK (<span id="countNOK">0</span>)
+            </button>
+            <button onclick="setFilter('EN_COURS')" id="tabEN_COURS" class="px-3 py-1.5 text-xs rounded-lg font-medium bg-amber-600/20 text-amber-300 hover:bg-amber-600/30 border border-amber-500/30 transition-all">
+              ⏳ En cours (<span id="countEN_COURS">0</span>)
+            </button>
+            <button onclick="setFilter('OK')" id="tabOK" class="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30 transition-all">
+              ✅ OK (<span id="countOK">0</span>)
+            </button>
+          </div>
+
+          <!-- Recherche en temps réel -->
+          <div class="flex items-center gap-2 flex-1 md:max-w-xs">
+            <div class="relative w-full">
+              <input type="text" id="searchInput" placeholder="Filtrer par nom de flux, erreur..."
+                class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                oninput="renderTable()">
+              <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Actions d'Export -->
+          <div class="flex items-center gap-2">
+            <button onclick="copyNokSummary()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 border border-rose-500/40 flex items-center gap-1.5 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+              <span>Copier les erreurs NOK</span>
+            </button>
+            <button onclick="exportCSV()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 flex items-center gap-1.5 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Export Excel / CSV</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Tableau des données extraites -->
+        <div class="overflow-x-auto rounded-xl border border-slate-700 bg-slate-950 max-h-[580px] overflow-y-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="sticky top-0 bg-slate-800 text-slate-300 border-b border-slate-700 z-10 shadow-sm">
+              <tr id="tableHeaderRow"></tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+
+        <!-- Informations en bas du tableau -->
+        <div class="flex items-center justify-between text-xs text-slate-400 pt-2">
+          <span id="filteredCountLabel">Affichage de 0 flux</span>
+          <span id="sortIndicator">Tri par défaut</span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-medium shadow-lg shadow-emerald-900/40 transition-all duration-300 opacity-0 pointer-events-none translate-y-2">
+      Notification
+    </div>
+
+  </div>
+
+  <script>
+    let parsedColumns = [];
+    let parsedRows = [];
+    let currentFilter = 'ALL';
+    let sortColumnIndex = 0;
+    let sortAscending = true;
+
+    function normalizeStatus(raw) {
+      if (!raw) return 'AUTRE';
+      const clean = raw.trim().toUpperCase();
+      if (clean.includes('NOK') || clean.includes('KO') || clean.includes('ERREUR') || clean.includes('ERROR') || clean.includes('STOPPED') || clean.includes('FAILED')) {
+        return 'NOK';
+      }
+      if (clean.includes('EN COURS') || clean.includes('PROGRESS') || clean.includes('RUNNING') || clean.includes('PENDING')) {
+        return 'EN_COURS';
+      }
+      if (clean.includes('OK') || clean.includes('SUCCESS') || clean.includes('SUCCÈS') || clean.includes('DONE')) {
+        return 'OK';
+      }
+      return 'AUTRE';
+    }
+
+    // Extraction robuste à partir du HTML copié depuis Outlook / Word
+    function parseHTMLContent(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const table = doc.querySelector('table');
+      if (!table) return null;
+
+      const allTrs = Array.from(table.querySelectorAll('tr'));
+      if (allTrs.length < 2) return null;
+
+      let headerTrIndex = -1;
+      let headerCells = [];
+
+      for (let i = 0; i < Math.min(allTrs.length, 5); i++) {
+        const cells = Array.from(allTrs[i].querySelectorAll('th, td')).map(c => c.textContent.trim());
+        const rowText = cells.join(' ').toLowerCase();
+        if (/flux|flow|nom|process|job/i.test(rowText) || /stat|etat/i.test(rowText)) {
+          headerTrIndex = i;
+          headerCells = cells;
+          break;
+        }
+      }
+
+      if (headerTrIndex === -1) {
+        headerTrIndex = 0;
+        headerCells = Array.from(allTrs[0].querySelectorAll('th, td')).map((c, idx) => c.textContent.trim() || `Colonne ${idx + 1}`);
+      }
+
+      const rows = [];
+      for (let i = headerTrIndex + 1; i < allTrs.length; i++) {
+        const tr = allTrs[i];
+        const cells = Array.from(tr.querySelectorAll('td, th')).map(c => c.textContent.trim());
+        if (cells.length === 0 || cells.every(c => !c)) continue;
+
+        while (cells.length < headerCells.length) {
+          cells.push('');
+        }
+        rows.push(cells);
+      }
+
+      return { columns: headerCells, rows: rows, source: 'HTML Table (Outlook / Word)' };
+    }
+
+    // Extraction à partir de texte brut (Tabulations, Markdown |, ou multi-espaces)
+    function parsePlainText(rawText) {
+      const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length < 2) return null;
+
+      let headerIndex = -1;
+      let delimiter = null;
+      let columns = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const hasHeaderKeyword = /flux|flow|nom|process/i.test(line) || /stat|etat/i.test(line);
+        if (hasHeaderKeyword) {
+          headerIndex = i;
+          if (line.includes('\t')) delimiter = '\t';
+          else if (line.includes('|')) delimiter = '|';
+          else delimiter = /\s{2,}/;
+          break;
+        }
+      }
+
+      if (headerIndex === -1) {
+        for (let i = 0; i < lines.length; i++) {
+          const l = lines[i];
+          if (/\b(OK|NOK|En cours)\b/i.test(l)) {
+            headerIndex = i > 0 ? i - 1 : 0;
+            delimiter = l.includes('\t') ? '\t' : (l.includes('|') ? '|' : /\s{2,}/);
+            break;
+          }
+        }
+      }
+
+      if (headerIndex === -1) return null;
+
+      const headerLine = lines[headerIndex];
+      if (delimiter === '|') {
+        columns = headerLine.split('|').map(c => c.trim()).filter(c => c.length > 0);
+      } else if (delimiter === '\t') {
+        columns = headerLine.split('\t').map(c => c.trim()).filter(c => c.length > 0);
+      } else {
+        columns = headerLine.split(delimiter).map(c => c.trim()).filter(c => c.length > 0);
+      }
+
+      const rows = [];
+      const footerRegex = /^(cordialement|this message|ce message|automonitoring|___)/i;
+
+      for (let i = headerIndex + 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (footerRegex.test(line)) break;
+
+        let parts = [];
+        if (delimiter === '|') {
+          parts = line.split('|').map(p => p.trim());
+          if (line.startsWith('|')) parts.shift();
+          if (line.endsWith('|')) parts.pop();
+        } else if (delimiter === '\t') {
+          parts = line.split('\t').map(p => p.trim());
+        } else {
+          parts = line.split(delimiter).map(p => p.trim());
+        }
+
+        if (parts.every(p => /^[-:]+$/.test(p))) continue;
+
+        if (parts.length >= 2) {
+          while (parts.length < columns.length) {
+            parts.push('');
+          }
+          rows.push(parts);
+        }
+      }
+
+      return { columns, rows, source: 'Texte brut (Tabulations / Délimiteurs)' };
+    }
+
+    const pasteArea = document.getElementById('richPasteArea');
+
+    pasteArea.addEventListener('paste', (e) => {
+      e.preventDefault();
+
+      const htmlData = e.clipboardData.getData('text/html');
+      const textData = e.clipboardData.getData('text/plain');
+
+      let parsed = null;
+
+      // 1. Priorité absolue au tableau HTML complet de Word / Outlook !
+      if (htmlData && htmlData.includes('<table')) {
+        parsed = parseHTMLContent(htmlData);
+      }
+
+      // 2. Si non présent ou invalide, repli sur le parsing texte
+      if (!parsed || parsed.rows.length === 0) {
+        parsed = parsePlainText(textData || pasteArea.innerText || '');
+      }
+
+      // 3. Affichage visuel dans la boîte de collage
+      if (htmlData && htmlData.includes('<table')) {
+        pasteArea.innerHTML = `<div class="text-xs text-blue-400 mb-2 font-medium">📋 Tableau riche Outlook/Word détecté et extrait !</div>` + htmlData;
+      } else {
+        pasteArea.innerText = textData;
+      }
+
+      applyParsedData(parsed);
+    });
+
+    pasteArea.addEventListener('input', () => {
+      const rawText = pasteArea.innerText;
+      const parsed = parsePlainText(rawText);
+      applyParsedData(parsed);
+    });
+
+    function applyParsedData(parsed) {
+      if (!parsed || parsed.rows.length === 0) {
+        document.getElementById('resultsSection').classList.add('hidden');
+        document.getElementById('parseStatus').innerHTML = `
+          <span class="text-amber-400">⚠️ Aucun tableau détecté. Copiez le tableau depuis votre e-mail et collez-le ici.</span>
+        `;
+        return;
+      }
+
+      parsedColumns = parsed.columns;
+      parsedRows = parsed.rows;
+
+      document.getElementById('parseStatus').innerHTML = `
+        <span class="text-emerald-400">✅ <b>${parsedRows.length} flux extraits avec succès</b> via <i>${parsed.source}</i> (${parsedColumns.join(' | ')})</span>
+      `;
+
+      updateKPIs();
+      renderTableHeader();
+      renderTable();
+      document.getElementById('resultsSection').classList.remove('hidden');
+    }
+
+    function clearArea() {
+      pasteArea.innerHTML = '';
+      document.getElementById('resultsSection').classList.add('hidden');
+      document.getElementById('parseStatus').innerHTML = '<span>Zone effacée. Prêt pour un nouveau collage.</span>';
+    }
+
+    function updateKPIs() {
+      const statusColIdx = parsedColumns.findIndex(c => /stat/i.test(c));
+      const total = parsedRows.length;
+      let ok = 0;
+      let nok = 0;
+      let progress = 0;
+
+      parsedRows.forEach(row => {
+        const rawStat = statusColIdx !== -1 ? row[statusColIdx] : '';
+        const norm = normalizeStatus(rawStat);
+        if (norm === 'OK') ok++;
+        else if (norm === 'NOK') nok++;
+        else if (norm === 'EN_COURS') progress++;
+      });
+
+      document.getElementById('kpiTotal').innerText = total;
+      document.getElementById('kpiOk').innerText = ok;
+      document.getElementById('kpiNok').innerText = nok;
+      document.getElementById('kpiProgress').innerText = progress;
+
+      document.getElementById('countALL').innerText = total;
+      document.getElementById('countOK').innerText = ok;
+      document.getElementById('countNOK').innerText = nok;
+      document.getElementById('countEN_COURS').innerText = progress;
+
+      const okPct = total > 0 ? Math.round((ok / total) * 100) : 0;
+      const nokPct = total > 0 ? Math.round((nok / total) * 100) : 0;
+      const progPct = total > 0 ? Math.round((progress / total) * 100) : 0;
+
+      document.getElementById('kpiOkPct').innerText = `${okPct}%`;
+      document.getElementById('kpiNokPct').innerText = `${nokPct}%`;
+      document.getElementById('kpiProgressPct').innerText = `${progPct}%`;
+      document.getElementById('kpiRate').innerText = `${okPct}%`;
+    }
+
+    function renderTableHeader() {
+      const headerRow = document.getElementById('tableHeaderRow');
+      headerRow.innerHTML = '';
+
+      parsedColumns.forEach((col, idx) => {
+        const th = document.createElement('th');
+        th.className = 'px-4 py-3 font-semibold cursor-pointer select-none hover:bg-slate-700 transition-colors';
+        th.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <span>${col}</span>
+            <span class="text-[10px] text-slate-400">↕</span>
+          </div>
+        `;
+        th.onclick = () => sortByColumn(idx);
+        headerRow.appendChild(th);
+      });
+    }
+
+    function sortByColumn(colIdx) {
+      if (sortColumnIndex === colIdx) {
+        sortAscending = !sortAscending;
+      } else {
+        sortColumnIndex = colIdx;
+        sortAscending = true;
+      }
+      renderTable();
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      ['ALL', 'OK', 'NOK', 'EN_COURS'].forEach(f => {
+        const btn = document.getElementById(`tab${f}`);
+        if (!btn) return;
+        if (f === filter) {
+          btn.classList.add('ring-2', 'ring-blue-400');
+        } else {
+          btn.classList.remove('ring-2', 'ring-blue-400');
+        }
+      });
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const searchQuery = (document.getElementById('searchInput').value || '').toLowerCase();
+      const statusColIdx = parsedColumns.findIndex(c => /stat/i.test(c));
+
+      let filtered = parsedRows.filter(row => {
+        if (currentFilter !== 'ALL' && statusColIdx !== -1) {
+          const norm = normalizeStatus(row[statusColIdx]);
+          if (norm !== currentFilter) return false;
+        }
+
+        if (searchQuery) {
+          const match = row.some(cell => cell.toLowerCase().includes(searchQuery));
+          if (!match) return false;
+        }
+
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        const valA = (a[sortColumnIndex] || '').toString();
+        const valB = (b[sortColumnIndex] || '').toString();
+        const cmp = valA.localeCompare(valB, undefined, { numeric: true });
+        return sortAscending ? cmp : -cmp;
+      });
+
+      tbody.innerHTML = '';
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="${parsedColumns.length}" class="px-4 py-8 text-center text-slate-400">
+              Aucun flux ne correspond aux filtres actuels.
+            </td>
+          </tr>
+        `;
+      } else {
+        filtered.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-800/50 transition-colors';
+
+          row.forEach((cell, idx) => {
+            const td = document.createElement('td');
+            td.className = 'px-4 py-2.5 whitespace-nowrap text-xs';
+
+            if (idx === statusColIdx) {
+              const norm = normalizeStatus(cell);
+              let badgeClass = 'badge-other';
+              let icon = '';
+              if (norm === 'OK') { badgeClass = 'badge-ok'; icon = '✅ '; }
+              else if (norm === 'NOK') { badgeClass = 'badge-nok'; icon = '❌ '; }
+              else if (norm === 'EN_COURS') { badgeClass = 'badge-progress'; icon = '⏳ '; }
+
+              td.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeClass}">${icon}${cell}</span>`;
+            } else if (/erreur|error/i.test(parsedColumns[idx]) && cell.trim()) {
+              td.innerHTML = `<span class="text-rose-400 font-medium">${cell}</span>`;
+            } else {
+              td.innerText = cell || '-';
+            }
+
+            tr.appendChild(td);
+          });
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      document.getElementById('filteredCountLabel').innerText = `Affichage de ${filtered.length} flux sur ${parsedRows.length}`;
+      const colName = parsedColumns[sortColumnIndex] || '';
+      document.getElementById('sortIndicator').innerText = `Trié par ${colName} (${sortAscending ? 'Croissant' : 'Décroissant'})`;
+    }
+
+    function copyNokSummary() {
+      const statusColIdx = parsedColumns.findIndex(c => /stat/i.test(c));
+      const errorColIdx = parsedColumns.findIndex(c => /erreur|error/i.test(c));
+      const noks = parsedRows.filter(r => normalizeStatus(r[statusColIdx]) === 'NOK');
+
+      if (noks.length === 0) {
+        showToast('Aucun flux NOK détecté ! 🎉');
+        return;
+      }
+
+      let text = `🚨 RAPPORT D'INCIDENT - FLUX EN ERREUR (NOK) :\n`;
+      text += `Nombre de flux impactés : ${noks.length}\n`;
+      text += `--------------------------------------------------------\n`;
+      noks.forEach(r => {
+        const flux = r[0] || 'Flux inconnu';
+        const err = errorColIdx !== -1 && r[errorColIdx] ? ` -> ${r[errorColIdx]}` : '';
+        text += `• ${flux}${err}\n`;
+      });
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`Copié : ${noks.length} flux NOK dans le presse-papier !`);
+      });
+    }
+
+    function exportCSV() {
+      if (parsedRows.length === 0) return;
+
+      const headerLine = parsedColumns.map(c => `"${c.replace(/"/g, '""')}"`).join(';');
+      const rowsLines = parsedRows.map(row => {
+        return row.map(val => `"${(val || '').replace(/"/g, '""')}"`).join(';');
+      });
+
+      const csvContent = '\uFEFF' + [headerLine, ...rowsLines].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `monitoring_flux_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Fichier CSV téléchargé avec succès !');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 3000);
+    }
+
+    const EXAMPLES = {
+      1: `Flux\tStatus\tErreur\tStart\tEnd
+WDT Post-Correlation Processes\tOK\t\t2026-11-12 23:00:03\t2026-11-12 23:00:03
+WDT LD Payments\tEn cours\t\t2026-11-12 23:00:02\t2026-11-12 23:00:02
+ORA LD IN Transactions Database\tNOK\tFlux en erreur (sémaphore)\t2026-11-12 21:21:05\t2026-11-12 21:21:05
+WDT DET HL IMEI\tNOK\tFlux en erreur (sémaphore)\t2026-11-12 20:32:47\t2026-11-12 20:32:47
+WDT Partitions Management\tOK\t\t2026-11-12 02:01:09\t2026-11-12 02:01:09`,
+
+      2: `Flux\tStatus\tErreur\tStart\tEnd
+cld_bv_acct_item_sd\tOK\t\t2026-11-04 12:20:46\t2026-11-04 12:29:38
+cld_m10_msc_out\tNOK\tFlow stopped while server shutdown.\t2026-11-09 08:30:08\t2026-11-09 08:46:51
+cld_m10_msc_out_st\tNOK\tError executing the action "Import" [Error parsing files]\t2026-11-11 02:53:49\t2026-11-12 00:51:02
+cld_eba_r_account\tOK\t\t2026-11-12 08:00:00\t2026-11-12 08:06:50`,
+
+      3: `Flux\tStatus\tLast Modified\tTime Since Last Execution
+ld_m247_mm_commission\t⏳ En cours\t2026-11-12 18:00:01\t0d:0h:0m:1s
+ld_t14_launch_automatic_case\t✅ OK\t2026-11-12 18:00:01\t0d:0h:0m:1s
+WDT SA Loadings\t❌ NOK\t2026-11-12 00:11:34\t0d:17h:48m:28s
+Global\t✅ OK\t2026-11-12 08:30:00\t0d:9h:30m:2s`
+    };
+
+    function loadExample(num) {
+      pasteArea.innerText = EXAMPLES[num] || '';
+      const parsed = parsePlainText(EXAMPLES[num] || '');
+      applyParsedData(parsed);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadExample(1);
+    });
+  </script>
+</body>
+</html>
