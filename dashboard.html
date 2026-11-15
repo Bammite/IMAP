@@ -4,16 +4,189 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analyseur de Flux de Monitoring RAID / OCAM</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com" defer></script>
   <style>
-    .badge-ok { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .badge-nok { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .badge-progress { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-    .badge-other { background-color: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+    :root {
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body.bg-slate-900 {
+      margin: 0;
+      padding: 1.5rem;
+      font-family: Arial, sans-serif;
+    }
+
+    .max-w-7xl {
+      width: 100%;
+      max-width: 80rem;
+      margin: 0 auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .badge-ok,
+    .badge-nok,
+    .badge-progress,
+    .badge-other {
+      background-color: #f4f4f5;
+      color: #27272a;
+      border: 1px solid #e4e4e7;
+    }
+
+    body.bg-slate-900 {
+      background: #f4f4f5 !important;
+      color: #18181b !important;
+    }
+
+    [class*="bg-slate-800"] {
+      background-color: #ffffff !important;
+    }
+
+    [class~="bg-slate-900"],
+    [class~="bg-slate-950"] {
+      background-color: #f4f4f5 !important;
+    }
+
+    [class*="text-slate-100"],
+    [class*="text-slate-200"],
+    [class~="text-white"] {
+      color: #18181b !important;
+    }
+
+    [class*="text-slate-"] {
+      color: #71717a !important;
+    }
+
+    [class*="text-slate-100"],
+    [class*="text-slate-200"] {
+      color: #27272a !important;
+    }
+
+    [class*="text-rose-"],
+    [class*="text-amber-"],
+    [class*="text-emerald-"],
+    [class*="text-blue-"] {
+      color: #3f3f46 !important;
+    }
+
+    [class*="border-slate-"],
+    [class*="border-rose-"],
+    [class*="border-amber-"],
+    [class*="border-emerald-"],
+    [class*="border-blue-"] {
+      border-color: #e4e4e7 !important;
+    }
+
+    [class*="bg-rose-"],
+    [class*="bg-amber-"],
+    [class*="bg-emerald-"],
+    [class*="bg-blue-"] {
+      background-color: #f4f4f5 !important;
+    }
+
+    #lbl_status_nok,
+    #lbl_status_progress,
+    #lbl_status_ok {
+      background: #f4f4f5 !important;
+      border-color: #e4e4e7 !important;
+    }
+
+    #richPasteArea,
+    input,
+    select {
+      color: #18181b !important;
+      caret-color: #18181b;
+    }
+
+    #richPasteArea {
+      background: #ffffff !important;
+      border-color: #d4d4d8 !important;
+      line-height: 1.6;
+    }
+
+    #richPasteArea:focus {
+      border-color: #71717a !important;
+      box-shadow: 0 0 0 3px rgb(24 24 27 / 8%);
+    }
+
+    input,
+    select {
+      background-color: #ffffff !important;
+      border-color: #d4d4d8 !important;
+      border-radius: 0.625rem;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #71717a !important;
+      box-shadow: 0 0 0 2px rgb(24 24 27 / 8%);
+      outline: none;
+    }
+
+    button {
+      color: #3f3f46;
+    }
+
+    button:hover {
+      background-color: #e4e4e7 !important;
+      color: #18181b !important;
+    }
+
+    #toast {
+      background: #18181b !important;
+      color: #ffffff !important;
+      box-shadow: 0 10px 24px rgb(24 24 27 / 16%) !important;
+    }
+
+    #tableHeaderRow th {
+      background: #f4f4f5 !important;
+      color: #52525b !important;
+    }
+
+    #tableBody tr:hover {
+      background: #fafafa !important;
+    }
+
+    #openImportButton {
+      background: #18181b !important;
+      color: #ffffff !important;
+    }
+
+    #openImportButton:hover {
+      background: #3f3f46 !important;
+      color: #ffffff !important;
+    }
+
+    #inputModal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgb(24 24 27 / 48%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    #inputModal.hidden {
+      display: none !important;
+    }
+
+    #importModalPanel {
+      max-height: min(90vh, 760px);
+      overflow-y: auto;
+      box-shadow: 0 24px 80px rgb(24 24 27 / 20%);
+    }
 
     #richPasteArea:empty:before {
       content: attr(data-placeholder);
-      color: #94a3b8;
+      color: #a1a1aa;
       font-style: italic;
     }
   </style>
@@ -42,8 +215,20 @@
         </div>
       </div>
 
-      <!-- Exemples de test -->
       <div class="flex flex-wrap items-center gap-2">
+        <a href="/" class="px-3 py-2 text-sm font-medium rounded-lg border border-slate-700 bg-slate-800 transition-colors">Accueil</a>
+        <button id="refreshOutlookButton" type="button" onclick="refreshMonitoringFromOutlook()"
+          class="px-3 py-2 text-sm font-medium rounded-lg border border-slate-700 bg-slate-800 transition-colors">
+          Actualiser Outlook
+        </button>
+        <button id="openImportButton" type="button" onclick="openImportModal()"
+          class="px-4 py-2 text-sm font-semibold rounded-xl shadow-sm transition-colors">
+          Importer des données
+        </button>
+      </div>
+
+      <!-- Exemples de test -->
+      <div id="exampleButtons" class="flex flex-wrap items-center gap-2">
         <span class="text-xs text-slate-400">Charger exemple :</span>
         <button onclick="loadExample(1)" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
           Exemple 1 (Fraud Admin)
@@ -57,11 +242,33 @@
       </div>
     </header>
 
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-3">
+      <div>
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Données affichées</p>
+        <p id="loadedDataSummary" class="mt-1 text-sm font-semibold text-white">Chargement des données Outlook…</p>
+      </div>
+      <p class="text-xs text-slate-400">Dossier Monitoring RAID · e-mails reçus depuis 4 h</p>
+    </div>
+    <p id="outlookFetchStatus" role="status" aria-live="polite" class="text-xs text-slate-400">Connexion à Outlook…</p>
+
+    <div id="inputModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" aria-hidden="true"
+      onclick="if (event.target === this) closeImportModal()">
+      <div id="importModalPanel" role="dialog" aria-modal="true" aria-labelledby="importModalTitle"
+        class="w-full max-w-3xl rounded-2xl border border-slate-700 bg-slate-800/80 p-5 shadow-2xl space-y-3">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="importModalTitle" class="text-lg font-semibold text-white">Importer un tableau</h2>
+            <p class="mt-1 text-sm text-slate-400">Collez le contenu HTML ou texte de votre rapport de monitoring.</p>
+          </div>
+          <button type="button" onclick="closeImportModal()" aria-label="Fermer la fenêtre d’import"
+            class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-lg">×</button>
+        </div>
+
     <!-- Zone de Collage Enrichie -->
     <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold text-white">📋 Zone de collage (Word, Outlook, Webmail)</span>
+          <span class="text-sm font-semibold text-white">Zone de collage (Word, Outlook, Webmail)</span>
           <span class="px-2 py-0.5 text-[11px] font-medium rounded-md bg-blue-600/20 text-blue-400 border border-blue-500/30">
             HTML & Texte supportés
           </span>
@@ -71,13 +278,22 @@
         </button>
       </div>
 
-      <div id="richPasteArea"
+      <div id="richPasteArea" role="textbox" aria-label="Contenu à analyser" aria-multiline="true"
            contenteditable="true"
            data-placeholder="Collez ici l'e-mail complet avec Cmd+V / Ctrl+V (Outlook, Word, Webmail)..."
            class="w-full min-h-[120px] max-h-[260px] overflow-y-auto p-4 text-xs md:text-sm font-sans bg-slate-950 text-slate-100 border-2 border-dashed border-blue-500/40 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"></div>
 
-      <div id="parseStatus" class="text-xs text-slate-400 flex items-center justify-between">
+      <div id="parseStatus" role="status" aria-live="polite" class="text-xs text-slate-400 flex items-center justify-between">
         <span>En attente de collage...</span>
+      </div>
+    </div>
+
+        <div id="exampleSlot" class="border-t border-slate-700 pt-3"></div>
+        <div class="flex justify-end border-t border-slate-700 pt-3">
+          <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-900 border border-slate-700">
+            Terminé
+          </button>
+        </div>
       </div>
     </div>
 
@@ -95,7 +311,7 @@
         <div class="bg-slate-800/80 border border-rose-500/30 rounded-xl p-4">
           <div class="text-xs text-rose-400 flex items-center justify-between">
             <span>Erreurs (NOK)</span>
-            <span>❌</span>
+            <span>—</span>
           </div>
           <div id="kpiNok" class="text-2xl font-bold text-rose-400 mt-1">0</div>
           <div id="kpiNokPct" class="text-[11px] text-rose-500/80 mt-0.5">0%</div>
@@ -104,7 +320,7 @@
         <div class="bg-slate-800/80 border border-amber-500/30 rounded-xl p-4">
           <div class="text-xs text-amber-400 flex items-center justify-between">
             <span>En cours</span>
-            <span>⏳</span>
+            <span>—</span>
           </div>
           <div id="kpiProgress" class="text-2xl font-bold text-amber-400 mt-1">0</div>
           <div id="kpiProgressPct" class="text-[11px] text-amber-500/80 mt-0.5">0%</div>
@@ -113,7 +329,7 @@
         <div class="bg-slate-800/80 border border-emerald-500/30 rounded-xl p-4">
           <div class="text-xs text-emerald-400 flex items-center justify-between">
             <span>Succès (OK)</span>
-            <span>✅</span>
+            <span>—</span>
           </div>
           <div id="kpiOk" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
           <div id="kpiOkPct" class="text-[11px] text-emerald-500/80 mt-0.5">0%</div>
@@ -130,7 +346,7 @@
       <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-700 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold text-white">⚙️ Filtres avancés combinés</span>
+            <span class="text-sm font-semibold text-white">Filtres avancés combinés</span>
             <span class="text-xs text-slate-400">(Multi-statuts + Seuil temporel en minutes)</span>
           </div>
           <button onclick="resetAllFilters()" class="text-xs text-blue-400 hover:text-blue-300 transition-colors">
@@ -152,7 +368,7 @@
                      id="lbl_status_nok"
                      style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4);">
                 <input type="checkbox" id="chk_NOK" checked onchange="onFilterChange()" class="rounded text-rose-600 focus:ring-0">
-                <span class="text-xs font-medium text-rose-300">❌ NOK (<span id="filterCountNOK">0</span>)</span>
+                <span class="text-xs font-medium text-rose-300">NOK (<span id="filterCountNOK">0</span>)</span>
               </label>
 
               <!-- Bouton Bascule EN COURS -->
@@ -160,7 +376,7 @@
                      id="lbl_status_progress"
                      style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4);">
                 <input type="checkbox" id="chk_EN_COURS" checked onchange="onFilterChange()" class="rounded text-amber-500 focus:ring-0">
-                <span class="text-xs font-medium text-amber-300">⏳ En cours (<span id="filterCountEN_COURS">0</span>)</span>
+                <span class="text-xs font-medium text-amber-300">En cours (<span id="filterCountEN_COURS">0</span>)</span>
               </label>
 
               <!-- Bouton Bascule OK -->
@@ -168,7 +384,7 @@
                      id="lbl_status_ok"
                      style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4);">
                 <input type="checkbox" id="chk_OK" checked onchange="onFilterChange()" class="rounded text-emerald-500 focus:ring-0">
-                <span class="text-xs font-medium text-emerald-300">✅ OK (<span id="filterCountOK">0</span>)</span>
+                <span class="text-xs font-medium text-emerald-300">OK (<span id="filterCountOK">0</span>)</span>
               </label>
 
               <!-- Bouton Bascule AUTRE -->
@@ -226,7 +442,7 @@
             </div>
 
             <div id="timeDetectionInfo" class="text-[11px] text-slate-400">
-              ℹ️ Colonne temporelle : <span id="detectedTimeColName" class="font-medium text-blue-400">Non détectée</span>
+              Colonne temporelle : <span id="detectedTimeColName" class="font-medium text-blue-400">Non détectée</span>
             </div>
           </div>
 
@@ -502,6 +718,44 @@
 
     const pasteArea = document.getElementById('richPasteArea');
 
+    function openImportModal() {
+      const modal = document.getElementById('inputModal');
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overflow-hidden');
+      pasteArea.focus();
+    }
+
+    function closeImportModal() {
+      const modal = document.getElementById('inputModal');
+      if (modal.classList.contains('hidden')) return;
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('overflow-hidden');
+      document.getElementById('openImportButton').focus();
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const modal = document.getElementById('inputModal');
+      if (modal.classList.contains('hidden')) return;
+      if (event.key === 'Escape') {
+        closeImportModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = modal.querySelectorAll('button:not([disabled]), [contenteditable="true"], input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
     pasteArea.addEventListener('paste', (e) => {
       e.preventDefault();
       const htmlData = e.clipboardData.getData('text/html');
@@ -516,12 +770,13 @@
       }
 
       if (htmlData && htmlData.includes('<table')) {
-        pasteArea.innerHTML = `<div class="text-xs text-blue-400 mb-2 font-medium">📋 Tableau riche Outlook/Word détecté et extrait !</div>` + htmlData;
+        pasteArea.innerHTML = `<div class="text-xs text-blue-400 mb-2 font-medium">Tableau riche Outlook/Word détecté et extrait.</div>` + htmlData;
       } else {
         pasteArea.innerText = textData;
       }
 
       applyParsedData(parsed);
+      if (parsed && parsed.rows.length > 0) closeImportModal();
     });
 
     pasteArea.addEventListener('input', () => {
@@ -530,22 +785,128 @@
       applyParsedData(parsed);
     });
 
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[character]);
+    }
+
+    function parseMonitoringEmails(emails) {
+      const tables = [];
+      emails.forEach(email => {
+        let parsed = email.html_body ? parseHTMLContent(email.html_body) : null;
+        if (!parsed || parsed.rows.length === 0) {
+          parsed = parsePlainText(email.body || '');
+        }
+        if (!parsed || parsed.rows.length === 0) return;
+
+        tables.push({
+          columns: ['Date de réception', 'Sujet du mail', ...parsed.columns],
+          rows: parsed.rows.map(row => [
+            email.received_at || '',
+            email.subject || '',
+            ...row
+          ])
+        });
+      });
+
+      if (tables.length === 0) return null;
+
+      const columns = [];
+      const columnIndexes = new Map();
+      tables.forEach(table => {
+        table.columns.forEach((column, index) => {
+          const key = column.trim().toLocaleLowerCase();
+          if (!columnIndexes.has(key)) {
+            columnIndexes.set(key, columns.length);
+            columns.push(column);
+          }
+        });
+      });
+
+      const rows = [];
+      tables.forEach(table => {
+        table.rows.forEach(row => {
+          const mergedRow = Array(columns.length).fill('');
+          table.columns.forEach((column, index) => {
+            mergedRow[columnIndexes.get(column.trim().toLocaleLowerCase())] = row[index] || '';
+          });
+          rows.push(mergedRow);
+        });
+      });
+
+      return {
+        columns,
+        rows,
+        source: `Outlook · ${emails.length} e-mails reçus dans les 4 dernières heures`
+      };
+    }
+
+    async function refreshMonitoringFromOutlook() {
+      const button = document.getElementById('refreshOutlookButton');
+      const status = document.getElementById('outlookFetchStatus');
+      button.disabled = true;
+      status.innerText = 'Lecture du dossier Outlook « Monitoring RAID »…';
+
+      try {
+        const response = await fetch('/api/monitoring-raid', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Impossible de lire le dossier Outlook.');
+
+        const emails = Array.isArray(data.emails) ? data.emails : [];
+        if (emails.length === 0) {
+          applyParsedData(null);
+          document.getElementById('loadedDataSummary').innerText = 'Aucun e-mail reçu depuis 4 h';
+          document.getElementById('parseStatus').innerText = 'Le dossier Monitoring RAID ne contient aucun e-mail dans cette période.';
+          status.innerText = `Dossier ${data.folder} analysé · ${data.file}`;
+          return;
+        }
+
+        const parsed = parseMonitoringEmails(emails);
+        if (!parsed) {
+          applyParsedData(null);
+          document.getElementById('loadedDataSummary').innerText = `${emails.length} e-mail(s) reçu(s) depuis 4 h · aucun tableau reconnu`;
+          status.innerText = `Dossier ${data.folder} analysé · collecte enregistrée dans ${data.file}`;
+          return;
+        }
+
+        applyParsedData(parsed);
+        document.getElementById('loadedDataSummary').innerText =
+          `${emails.length} e-mail(s) des 4 dernières heures · ${parsed.rows.length} flux extraits`;
+        document.getElementById('parseStatus').innerText =
+          `${parsed.rows.length} flux extraits de ${emails.length} e-mail(s). Collecte enregistrée dans ${data.file}.`;
+        status.innerText = `Dernier e-mail reçu : ${data.latest_email ? data.latest_email.received_at : 'aucun'}`;
+      } catch (error) {
+        status.innerText = `Erreur de récupération Outlook : ${error.message}`;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     function applyParsedData(parsed) {
       if (!parsed || parsed.rows.length === 0) {
+        parsedColumns = [];
+        parsedRows = [];
         document.getElementById('resultsSection').classList.add('hidden');
+        document.getElementById('loadedDataSummary').innerText = 'Aucun tableau reconnu';
         document.getElementById('parseStatus').innerHTML = `
-          <span class="text-amber-400">⚠️ Aucun tableau détecté. Copiez le tableau de votre e-mail et collez-le ici.</span>
+          <span class="text-amber-400">Aucun tableau détecté. Copiez le tableau de votre e-mail et collez-le ici.</span>
         `;
         return;
       }
 
       parsedColumns = parsed.columns;
       parsedRows = parsed.rows;
+      document.getElementById('loadedDataSummary').innerText = `${parsedRows.length} flux analysés · ${parsed.source}`;
 
       const timeColIdx = getTimeColumnIndex();
       const timeColInfo = document.getElementById('detectedTimeColName');
       if (timeColIdx !== -1) {
-        timeColInfo.innerHTML = `<b>${parsedColumns[timeColIdx]}</b> (colonne #${timeColIdx + 1}) - Conversion minutes active`;
+        timeColInfo.innerHTML = `<b>${escapeHtml(parsedColumns[timeColIdx])}</b> (colonne #${timeColIdx + 1}) - Conversion minutes active`;
         timeColInfo.className = 'font-semibold text-emerald-400';
       } else {
         timeColInfo.innerText = 'Non détectée dans ce tableau';
@@ -553,7 +914,7 @@
       }
 
       document.getElementById('parseStatus').innerHTML = `
-        <span class="text-emerald-400">✅ <b>${parsedRows.length} flux extraits</b> via <i>${parsed.source}</i> (${parsedColumns.join(' | ')})</span>
+        <span class="text-emerald-400"><b>${parsedRows.length} flux extraits</b> via <i>${escapeHtml(parsed.source)}</i> (${parsedColumns.map(escapeHtml).join(' | ')})</span>
       `;
 
       updateKPIs();
@@ -564,7 +925,10 @@
 
     function clearArea() {
       pasteArea.innerHTML = '';
+      parsedColumns = [];
+      parsedRows = [];
       document.getElementById('resultsSection').classList.add('hidden');
+      document.getElementById('loadedDataSummary').innerText = 'Aucune donnée chargée';
       document.getElementById('parseStatus').innerHTML = '<span>Zone effacée.</span>';
     }
 
@@ -611,7 +975,7 @@
         th.className = 'px-4 py-3 font-semibold cursor-pointer select-none hover:bg-slate-700 transition-colors';
         th.innerHTML = `
           <div class="flex items-center gap-1.5">
-            <span>${col}</span>
+            <span>${escapeHtml(col)}</span>
             <span class="text-[10px] text-slate-400">↕</span>
           </div>
         `;
@@ -702,24 +1066,23 @@
             if (idx === statusColIdx) {
               const norm = normalizeStatus(cell);
               let badgeClass = 'badge-other';
-              let icon = '';
-              if (norm === 'OK') { badgeClass = 'badge-ok'; icon = '✅ '; }
-              else if (norm === 'NOK') { badgeClass = 'badge-nok'; icon = '❌ '; }
-              else if (norm === 'EN_COURS') { badgeClass = 'badge-progress'; icon = '⏳ '; }
+              if (norm === 'OK') badgeClass = 'badge-ok';
+              else if (norm === 'NOK') badgeClass = 'badge-nok';
+              else if (norm === 'EN_COURS') badgeClass = 'badge-progress';
 
-              td.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeClass}">${icon}${cell}</span>`;
+              td.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeClass}">${escapeHtml(cell.replace(/[✅❌⏳]/g, '').trim())}</span>`;
             } else if (idx === timeColIdx && cell.trim()) {
               const mins = parseDurationToMinutes(cell);
               td.innerHTML = `
                 <div class="flex items-center gap-2">
-                  <span class="font-mono text-slate-200">${cell}</span>
+                  <span class="font-mono text-slate-200">${escapeHtml(cell)}</span>
                   <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-300 border border-blue-500/20 font-semibold">
                     ${mins} min
                   </span>
                 </div>
               `;
             } else if (/erreur|error/i.test(parsedColumns[idx]) && cell.trim()) {
-              td.innerHTML = `<span class="text-rose-400 font-medium">${cell}</span>`;
+              td.innerHTML = `<span class="text-rose-400 font-medium">${escapeHtml(cell)}</span>`;
             } else {
               td.innerText = cell || '-';
             }
@@ -827,13 +1190,17 @@ WDT HK Database\t✅ OK\t2026-11-09 10:49:22\t3d:7h:10m:40s`
     };
 
     function loadExample(num) {
-      pasteArea.innerText = EXAMPLES[num] || '';
-      const parsed = parsePlainText(EXAMPLES[num] || '');
+      const sample = (EXAMPLES[num] || '').replace(/[✅❌⏳]/g, '');
+      pasteArea.innerText = sample;
+      const parsed = parsePlainText(sample);
       applyParsedData(parsed);
+      document.getElementById('outlookFetchStatus').innerText = 'Exemple de démonstration chargé.';
+      closeImportModal();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      loadExample(3);
+      document.getElementById('exampleSlot').appendChild(document.getElementById('exampleButtons'));
+      refreshMonitoringFromOutlook();
     });
   </script>
 </body>

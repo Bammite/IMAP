@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des dossiers — Supervision IT</title>
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", Arial, sans-serif; color: #18181b; background: #f4f4f5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 36px 20px; }
+    main { width: min(100%, 940px); margin: 0 auto; }
+    nav { margin-bottom: 24px; }
+    a { color: #3f3f46; font-size: 14px; font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .eyebrow { margin: 0 0 8px; color: #71717a; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(26px, 5vw, 36px); }
+    header > p:last-child { color: #71717a; line-height: 1.6; }
+    .panel, .folder-card { border: 1px solid #e4e4e7; border-radius: 16px; background: #fff; box-shadow: 0 8px 26px rgb(24 24 27 / 4%); }
+    .panel { margin-top: 24px; padding: 22px; }
+    h2 { margin: 0 0 18px; font-size: 18px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 600; }
+    input, textarea { width: 100%; padding: 11px 12px; border: 1px solid #d4d4d8; border-radius: 9px; color: #18181b; font: inherit; }
+    textarea { min-height: 78px; resize: vertical; }
+    input:focus, textarea:focus, button:focus-visible { outline: 3px solid rgb(24 24 27 / 12%); border-color: #71717a; }
+    .full { grid-column: 1 / -1; }
+    .actions, .folder-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    button { padding: 10px 14px; border: 1px solid #d4d4d8; border-radius: 9px; background: #f4f4f5; color: #27272a; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #e4e4e7; }
+    button.primary { border-color: #18181b; background: #18181b; color: #fff; }
+    button.primary:hover { background: #3f3f46; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    #formStatus, #listStatus { min-height: 20px; margin: 12px 0 0; color: #52525b; font-size: 13px; }
+    .folder-list { display: grid; gap: 12px; margin-top: 14px; }
+    .folder-card { padding: 18px; }
+    .folder-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .folder-name { margin: 0; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+    .folder-meta { margin: 6px 0 0; color: #71717a; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+    .status-tag { flex: 0 0 auto; padding: 4px 8px; border: 1px solid #e4e4e7; border-radius: 999px; background: #f4f4f5; color: #3f3f46; font-size: 11px; font-weight: 700; }
+    .folder-actions { margin-top: 14px; }
+    .folder-actions button { padding: 7px 10px; font-size: 12px; }
+    @media (max-width: 620px) { body { padding: 26px 16px; } .form-grid { grid-template-columns: 1fr; } .full { grid-column: auto; } .folder-top { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <main>
+    <nav><a href="/">← Accueil</a></nav>
+    <header>
+      <p class="eyebrow">Configuration Outlook</p>
+      <h1>Gestion des dossiers</h1>
+      <p>Enregistrez les dossiers à surveiller et associez-les à leur type d’alerte. Les chemins sont relatifs à la Boîte de réception, par exemple <code>Production/PICO</code>.</p>
+    </header>
+
+    <section class="panel" aria-labelledby="formTitle">
+      <h2 id="formTitle">Ajouter un dossier</h2>
+      <form id="folderForm">
+        <input id="folderId" type="hidden">
+        <div class="form-grid">
+          <div>
+            <label for="outlookFolder">Dossier Outlook</label>
+            <input id="outlookFolder" maxlength="240" placeholder="PICO ou Production/PICO" required>
+          </div>
+          <div>
+            <label for="alertType">Type d’alerte</label>
+            <input id="alertType" maxlength="120" placeholder="Ex. Espace disque" required>
+          </div>
+          <div class="full">
+            <label for="description">Consigne ou description (facultatif)</label>
+            <textarea id="description" maxlength="500" placeholder="Ex. Vérifier la capacité et prévenir l’équipe infrastructure."></textarea>
+          </div>
+          <div class="full actions">
+            <button id="saveButton" class="primary" type="submit">Ajouter le dossier</button>
+            <button id="cancelEditButton" type="button" hidden>Annuler la modification</button>
+          </div>
+        </div>
+      </form>
+      <p id="formStatus" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="listTitle">
+      <h2 id="listTitle">Dossiers configurés</h2>
+      <p id="listStatus" role="status" aria-live="polite">Chargement…</p>
+      <div id="folderList" class="folder-list"></div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('folderForm');
+    const formStatus = document.getElementById('formStatus');
+    const listStatus = document.getElementById('listStatus');
+    const folderList = document.getElementById('folderList');
+    const folderId = document.getElementById('folderId');
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'La requête a échoué.');
+      return data;
+    }
+
+    function renderFolders(folders) {
+      folderList.replaceChildren();
+      listStatus.textContent = folders.length ? `${folders.length} dossier(s) configuré(s).` : 'Aucun dossier configuré.';
+      for (const folder of folders) {
+        const card = document.createElement('article');
+        card.className = 'folder-card';
+        const top = document.createElement('div');
+        top.className = 'folder-top';
+        const details = document.createElement('div');
+        const name = document.createElement('p');
+        name.className = 'folder-name';
+        name.textContent = folder.outlook_folder;
+        const meta = document.createElement('p');
+        meta.className = 'folder-meta';
+        meta.textContent = `Alerte : ${folder.alert_type}${folder.description ? ` · ${folder.description}` : ''}`;
+        details.append(name, meta);
+        const state = document.createElement('span');
+        state.className = 'status-tag';
+        state.textContent = folder.enabled ? 'ACTIF' : 'INACTIF';
+        top.append(details, state);
+
+        const actions = document.createElement('div');
+        actions.className = 'folder-actions';
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.textContent = 'Modifier';
+        edit.addEventListener('click', () => beginEdit(folder));
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.textContent = folder.enabled ? 'Désactiver' : 'Activer';
+        toggle.addEventListener('click', () => saveFolder({ ...folder, enabled: !folder.enabled }));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = folder.id === 'monitoring-raid' ? 'Dossier système' : 'Supprimer';
+        remove.disabled = folder.id === 'monitoring-raid';
+        remove.addEventListener('click', () => removeFolder(folder));
+        actions.append(edit, toggle, remove);
+        card.append(top, actions);
+        folderList.append(card);
+      }
+    }
+
+    async function loadFolders() {
+      listStatus.textContent = 'Chargement des dossiers…';
+      try {
+        const data = await requestJson('/api/folders');
+        renderFolders(data.folders);
+      } catch (error) {
+        listStatus.textContent = `Erreur : ${error.message}`;
+      }
+    }
+
+    function beginEdit(folder) {
+      folderId.value = folder.id;
+      document.getElementById('outlookFolder').value = folder.outlook_folder;
+      document.getElementById('alertType').value = folder.alert_type;
+      document.getElementById('description').value = folder.description || '';
+      document.getElementById('formTitle').textContent = 'Modifier un dossier';
+      document.getElementById('saveButton').textContent = 'Enregistrer les modifications';
+      document.getElementById('cancelEditButton').hidden = false;
+      document.getElementById('outlookFolder').focus();
+    }
+
+    function clearForm() {
+      form.reset();
+      folderId.value = '';
+      document.getElementById('formTitle').textContent = 'Ajouter un dossier';
+      document.getElementById('saveButton').textContent = 'Ajouter le dossier';
+      document.getElementById('cancelEditButton').hidden = true;
+    }
+
+    async function saveFolder(folder) {
+      try {
+        const data = await requestJson('/api/folders/update', {
+          method: 'POST',
+          body: JSON.stringify(folder)
+        });
+        renderFolders(data.folders);
+        formStatus.textContent = 'Dossier mis à jour.';
+      } catch (error) {
+        formStatus.textContent = `Erreur : ${error.message}`;
+      }
+    }
+
+    async function removeFolder(folder) {
+      if (!window.confirm(`Supprimer la configuration « ${folder.outlook_folder} » ?`)) return;
+      try {
+        const data = await requestJson('/api/folders/delete', {
+          method: 'POST',
+          body: JSON.stringify({ id: folder.id })
+        });
+        renderFolders(data.folders);
+        formStatus.textContent = 'Configuration supprimée. Aucun e-mail Outlook n’a été supprimé.';
+      } catch (error) {
+        formStatus.textContent = `Erreur : ${error.message}`;
+      }
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      formStatus.textContent = 'Enregistrement…';
+      const data = {
+        outlook_folder: document.getElementById('outlookFolder').value.trim(),
+        alert_type: document.getElementById('alertType').value.trim(),
+        description: document.getElementById('description').value.trim()
+      };
+      const editingId = folderId.value;
+      try {
+        const result = await requestJson(editingId ? '/api/folders/update' : '/api/folders', {
+          method: 'POST',
+          body: JSON.stringify(editingId ? { ...data, id: editingId } : data)
+        });
+        renderFolders(result.folders);
+        clearForm();
+        formStatus.textContent = editingId ? 'Dossier mis à jour.' : 'Dossier ajouté.';
+      } catch (error) {
+        formStatus.textContent = `Erreur : ${error.message}`;
+      }
+    });
+
+    document.getElementById('cancelEditButton').addEventListener('click', clearForm);
+    loadFolders();
+  </script>
+</body>
+</html>

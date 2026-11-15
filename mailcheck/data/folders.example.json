@@ -1,0 +1,14 @@
+{
+  "format": "mailcheck-folder-config",
+  "version": 1,
+  "folders": [
+    {
+      "id": "monitoring-raid",
+      "outlook_folder": "Monitoring RAID",
+      "alert_type": "Supervision RAID",
+      "description": "Dossier source de l'analyse des flux des quatre dernières heures.",
+      "enabled": true,
+      "created_at": "2026-11-15T00:00:00"
+    }
+  ]
+}

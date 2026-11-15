@@ -10,3 +10,8 @@ ENV/
 # Python cache
 __pycache__/
 *.pyc
+
+# Local Outlook configuration and collected message contents
+mailcheck/data/folders.json
+mailcheck/data/mailcollect/*
+!mailcheck/data/mailcollect/.gitkeep

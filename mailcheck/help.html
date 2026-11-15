@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aide — Supervision IT</title>
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", Arial, sans-serif; color: #18181b; background: #f4f4f5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px 20px; }
+    main { width: min(100%, 820px); margin: 0 auto; }
+    nav { margin-bottom: 24px; }
+    a { color: #3f3f46; font-size: 14px; font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .eyebrow { margin: 0 0 8px; color: #71717a; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(26px, 5vw, 36px); }
+    header > p:last-child { color: #71717a; line-height: 1.6; }
+    section { margin-top: 20px; padding: 22px; border: 1px solid #e4e4e7; border-radius: 16px; background: #fff; }
+    h2 { margin-top: 0; font-size: 18px; }
+    li, p { color: #52525b; line-height: 1.65; }
+    code { padding: 2px 5px; border-radius: 5px; background: #f4f4f5; color: #27272a; }
+    @media (max-width: 560px) { body { padding: 28px 16px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <nav><a href="/">← Accueil</a></nav>
+    <header>
+      <p class="eyebrow">Documentation</p>
+      <h1>Aide</h1>
+      <p>Repères pour lancer le centre de supervision et utiliser les premières fonctions.</p>
+    </header>
+
+    <section>
+      <h2>Démarrer l’application</h2>
+      <ol>
+        <li>Ouvrez Outlook classique sur le même PC et vérifiez que votre profil est chargé.</li>
+        <li>Depuis la racine du projet, lancez <code>py -m mailcheck.server</code>.</li>
+        <li>Ouvrez <code>http://localhost:8000/</code> dans votre navigateur.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Gestion des dossiers</h2>
+      <p>Enregistrez un chemin relatif à la Boîte de réception, par exemple <code>PICO</code> ou <code>Production/PICO</code>, puis associez un type d’alerte et une consigne facultative. Les configurations sont conservées dans <code>mailcheck/data/folders.json</code>. Activer ou supprimer une configuration ne modifie aucun e-mail Outlook.</p>
+    </section>
+
+    <section>
+      <h2>Analyse Monitoring RAID</h2>
+      <p>L’analyseur lit les messages du dossier Outlook configuré comme <code>Monitoring RAID</code>, reçus dans les quatre dernières heures. Il extrait les tableaux HTML ou texte et conserve également la possibilité de coller manuellement un tableau.</p>
+      <p>La collecte Outlook est en lecture seule : les messages ne sont ni déplacés, ni supprimés, ni marqués comme lus par l’application.</p>
+    </section>
+
+    <section>
+      <h2>Données locales et confidentialité</h2>
+      <p>Les instantanés de collecte sont enregistrés sous <code>mailcheck/data/mailcollect/</code>. Ils peuvent inclure le sujet, l’expéditeur et le corps du message. Gardez ces fichiers privés et supprimez-les selon les règles de conservation de votre organisation.</p>
+    </section>
+  </main>
+</body>
+</html>
