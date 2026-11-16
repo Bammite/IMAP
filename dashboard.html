@@ -5,191 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analyseur de Flux de Monitoring RAID / OCAM</title>
   <script src="https://cdn.tailwindcss.com" defer></script>
-  <style>
-    :root {
-      color-scheme: light;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body.bg-slate-900 {
-      margin: 0;
-      padding: 1.5rem;
-      font-family: Arial, sans-serif;
-    }
-
-    .max-w-7xl {
-      width: 100%;
-      max-width: 80rem;
-      margin: 0 auto;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .badge-ok,
-    .badge-nok,
-    .badge-progress,
-    .badge-other {
-      background-color: #f4f4f5;
-      color: #27272a;
-      border: 1px solid #e4e4e7;
-    }
-
-    body.bg-slate-900 {
-      background: #f4f4f5 !important;
-      color: #18181b !important;
-    }
-
-    [class*="bg-slate-800"] {
-      background-color: #ffffff !important;
-    }
-
-    [class~="bg-slate-900"],
-    [class~="bg-slate-950"] {
-      background-color: #f4f4f5 !important;
-    }
-
-    [class*="text-slate-100"],
-    [class*="text-slate-200"],
-    [class~="text-white"] {
-      color: #18181b !important;
-    }
-
-    [class*="text-slate-"] {
-      color: #71717a !important;
-    }
-
-    [class*="text-slate-100"],
-    [class*="text-slate-200"] {
-      color: #27272a !important;
-    }
-
-    [class*="text-rose-"],
-    [class*="text-amber-"],
-    [class*="text-emerald-"],
-    [class*="text-blue-"] {
-      color: #3f3f46 !important;
-    }
-
-    [class*="border-slate-"],
-    [class*="border-rose-"],
-    [class*="border-amber-"],
-    [class*="border-emerald-"],
-    [class*="border-blue-"] {
-      border-color: #e4e4e7 !important;
-    }
-
-    [class*="bg-rose-"],
-    [class*="bg-amber-"],
-    [class*="bg-emerald-"],
-    [class*="bg-blue-"] {
-      background-color: #f4f4f5 !important;
-    }
-
-    #lbl_status_nok,
-    #lbl_status_progress,
-    #lbl_status_ok {
-      background: #f4f4f5 !important;
-      border-color: #e4e4e7 !important;
-    }
-
-    #richPasteArea,
-    input,
-    select {
-      color: #18181b !important;
-      caret-color: #18181b;
-    }
-
-    #richPasteArea {
-      background: #ffffff !important;
-      border-color: #d4d4d8 !important;
-      line-height: 1.6;
-    }
-
-    #richPasteArea:focus {
-      border-color: #71717a !important;
-      box-shadow: 0 0 0 3px rgb(24 24 27 / 8%);
-    }
-
-    input,
-    select {
-      background-color: #ffffff !important;
-      border-color: #d4d4d8 !important;
-      border-radius: 0.625rem;
-    }
-
-    input:focus,
-    select:focus {
-      border-color: #71717a !important;
-      box-shadow: 0 0 0 2px rgb(24 24 27 / 8%);
-      outline: none;
-    }
-
-    button {
-      color: #3f3f46;
-    }
-
-    button:hover {
-      background-color: #e4e4e7 !important;
-      color: #18181b !important;
-    }
-
-    #toast {
-      background: #18181b !important;
-      color: #ffffff !important;
-      box-shadow: 0 10px 24px rgb(24 24 27 / 16%) !important;
-    }
-
-    #tableHeaderRow th {
-      background: #f4f4f5 !important;
-      color: #52525b !important;
-    }
-
-    #tableBody tr:hover {
-      background: #fafafa !important;
-    }
-
-    #openImportButton {
-      background: #18181b !important;
-      color: #ffffff !important;
-    }
-
-    #openImportButton:hover {
-      background: #3f3f46 !important;
-      color: #ffffff !important;
-    }
-
-    #inputModal {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      background: rgb(24 24 27 / 48%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    #inputModal.hidden {
-      display: none !important;
-    }
-
-    #importModalPanel {
-      max-height: min(90vh, 760px);
-      overflow-y: auto;
-      box-shadow: 0 24px 80px rgb(24 24 27 / 20%);
-    }
-
-    #richPasteArea:empty:before {
-      content: attr(data-placeholder);
-      color: #a1a1aa;
-      font-style: italic;
-    }
-  </style>
+  <link rel="stylesheet" href="/dashboard.css">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 antialiased font-sans">
 
@@ -217,9 +33,9 @@
 
       <div class="flex flex-wrap items-center gap-2">
         <a href="/" class="px-3 py-2 text-sm font-medium rounded-lg border border-slate-700 bg-slate-800 transition-colors">Accueil</a>
-        <button id="refreshOutlookButton" type="button" onclick="refreshMonitoringFromOutlook()"
+        <button id="refreshOutlookButton" type="button" onclick="openAnalysisSettingsModal()"
           class="px-3 py-2 text-sm font-medium rounded-lg border border-slate-700 bg-slate-800 transition-colors">
-          Actualiser Outlook
+          Paramètres d’analyse
         </button>
         <button id="openImportButton" type="button" onclick="openImportModal()"
           class="px-4 py-2 text-sm font-semibold rounded-xl shadow-sm transition-colors">
@@ -247,9 +63,52 @@
         <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Données affichées</p>
         <p id="loadedDataSummary" class="mt-1 text-sm font-semibold text-white">Chargement des données Outlook…</p>
       </div>
-      <p class="text-xs text-slate-400">Dossier Monitoring RAID · e-mails reçus depuis 4 h</p>
+      <p id="analysisWindowSummary" class="text-xs text-slate-400">Dossier Monitoring RAID</p>
     </div>
     <p id="outlookFetchStatus" role="status" aria-live="polite" class="text-xs text-slate-400">Connexion à Outlook…</p>
+
+    <div id="analysisSettingsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4"
+      aria-hidden="true" onclick="if (event.target === this) closeAnalysisSettingsModal()">
+      <div id="analysisSettingsPanel" role="dialog" aria-modal="true" aria-labelledby="analysisSettingsTitle"
+        class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Paramètres de l’analyse</p>
+          <h2 id="analysisSettingsTitle" class="mt-1 text-xl font-semibold text-zinc-900">Analyser Monitoring RAID</h2>
+          <p class="mt-2 text-sm text-zinc-600">Choisissez l’heure de début et le format d’extraction des e-mails. Le filtre porte sur leur date de réception Outlook.</p>
+        </div>
+
+        <form id="analysisSettingsForm" class="space-y-5">
+          <div>
+            <label for="analysisStartTime" class="block text-sm font-medium text-zinc-800">Depuis quelle heure ?</label>
+            <input id="analysisStartTime" name="startTime" type="time" required
+              class="mt-1 block w-full border border-zinc-300 px-3 py-2 text-sm">
+            <p class="mt-1 text-xs text-zinc-500">L’heure est interprétée aujourd’hui, sur l’heure locale de ce PC. Elle ne peut pas être dans le futur. Les heures indiquées dans le contenu des tableaux ne sont pas filtrées.</p>
+          </div>
+
+          <fieldset>
+            <legend class="text-sm font-medium text-zinc-800">Séparer les extractions par e-mail ?</legend>
+            <div class="mt-2 space-y-2">
+              <label class="flex items-start gap-2 text-sm text-zinc-700">
+                <input type="radio" name="separateEmails" value="true" checked class="mt-1">
+                <span>Oui, afficher chaque e-mail dans son propre bloc avec son export CSV.</span>
+              </label>
+              <label class="flex items-start gap-2 text-sm text-zinc-700">
+                <input type="radio" name="separateEmails" value="false" class="mt-1">
+                <span>Non, regrouper les tableaux dans une extraction unique.</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <p id="analysisSettingsError" role="alert" class="hidden text-sm font-medium text-red-700"></p>
+          <div class="flex justify-end gap-2 border-t border-zinc-200 pt-4">
+            <button type="button" onclick="closeAnalysisSettingsModal()"
+              class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium">Annuler</button>
+            <button id="startAnalysisButton" type="submit"
+              class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white">Lancer l’analyse</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <div id="inputModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" aria-hidden="true"
       onclick="if (event.target === this) closeImportModal()">
@@ -343,7 +202,7 @@
       </div>
 
       <!-- Panneau de Filtres Avancés Combinés -->
-      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm">
+      <div id="aggregateFiltersPanel" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-700 pb-3">
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-white">Filtres avancés combinés</span>
@@ -365,24 +224,21 @@
               
               <!-- Bouton Bascule NOK -->
               <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-all"
-                     id="lbl_status_nok"
-                     style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4);">
+                     id="lbl_status_nok">
                 <input type="checkbox" id="chk_NOK" checked onchange="onFilterChange()" class="rounded text-rose-600 focus:ring-0">
                 <span class="text-xs font-medium text-rose-300">NOK (<span id="filterCountNOK">0</span>)</span>
               </label>
 
               <!-- Bouton Bascule EN COURS -->
               <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-all"
-                     id="lbl_status_progress"
-                     style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4);">
+                     id="lbl_status_progress">
                 <input type="checkbox" id="chk_EN_COURS" checked onchange="onFilterChange()" class="rounded text-amber-500 focus:ring-0">
                 <span class="text-xs font-medium text-amber-300">En cours (<span id="filterCountEN_COURS">0</span>)</span>
               </label>
 
               <!-- Bouton Bascule OK -->
               <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-all"
-                     id="lbl_status_ok"
-                     style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4);">
+                     id="lbl_status_ok">
                 <input type="checkbox" id="chk_OK" checked onchange="onFilterChange()" class="rounded text-emerald-500 focus:ring-0">
                 <span class="text-xs font-medium text-emerald-300">OK (<span id="filterCountOK">0</span>)</span>
               </label>
@@ -468,13 +324,16 @@
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               <span>Export CSV</span>
             </button>
+            <button onclick="exportGlobalWorkbook()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700">
+              Export Excel (.xlsx)
+            </button>
           </div>
         </div>
 
       </div>
 
       <!-- Tableau Interactif -->
-      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
+      <div id="aggregateTablePanel" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
         <div class="overflow-x-auto rounded-xl border border-slate-700 bg-slate-950 max-h-[580px] overflow-y-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead class="sticky top-0 bg-slate-800 text-slate-300 border-b border-slate-700 z-10 shadow-sm">
@@ -490,6 +349,8 @@
         </div>
       </div>
 
+      <div id="emailBlocksSection" class="hidden space-y-4" aria-live="polite"></div>
+
     </div>
 
     <!-- Toast Notification -->
@@ -502,6 +363,7 @@
   <script>
     let parsedColumns = [];
     let parsedRows = [];
+    let emailExtractions = [];
     let sortColumnIndex = 0;
     let sortAscending = true;
 
@@ -541,7 +403,9 @@
     function normalizeStatus(raw) {
       if (!raw) return 'AUTRE';
       const clean = raw.trim().toUpperCase();
-      if (clean.includes('NOK') || clean.includes('KO') || clean.includes('ERREUR') || clean.includes('ERROR') || clean.includes('STOPPED') || clean.includes('FAILED')) {
+      if (/\bNOK\b|\bKO\b/.test(clean) || clean.includes('ERREUR') || clean.includes('ERROR') ||
+          clean.includes('STOPPED') || clean.includes('FAILED') || clean.includes('FAILURE') ||
+          clean.includes('ECHEC') || clean.includes('❌')) {
         return 'NOK';
       }
       if (clean.includes('EN COURS') || clean.includes('PROGRESS') || clean.includes('RUNNING') || clean.includes('PENDING')) {
@@ -551,6 +415,16 @@
         return 'OK';
       }
       return 'AUTRE';
+    }
+
+    function statusStyleClass(raw) {
+      const status = normalizeStatus(raw);
+      if (status === 'NOK') return 'status-error';
+      const clean = String(raw || '').trim().toUpperCase();
+      if (/\b(WARNING|WARN|AVERTISSEMENT)\b/.test(clean)) return 'status-warning';
+      if (status === 'OK') return 'status-ok';
+      if (status === 'EN_COURS') return 'status-progress';
+      return '';
     }
 
     function getTimeColumnIndex() {
@@ -756,8 +630,83 @@
       }
     });
 
+    document.addEventListener('keydown', (event) => {
+      const modal = document.getElementById('analysisSettingsModal');
+      if (modal.classList.contains('hidden')) return;
+      if (event.key === 'Escape') {
+        closeAnalysisSettingsModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = modal.querySelectorAll('button:not([disabled]), input:not([disabled])');
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    function defaultAnalysisStartTime() {
+      const now = new Date();
+      const start = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+      if (start.toDateString() !== now.toDateString()) return '00:00';
+      return `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function openAnalysisSettingsModal() {
+      const modal = document.getElementById('analysisSettingsModal');
+      const startTime = document.getElementById('analysisStartTime');
+      if (!startTime.value) startTime.value = defaultAnalysisStartTime();
+      document.getElementById('analysisSettingsError').classList.add('hidden');
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overflow-hidden');
+      startTime.focus();
+    }
+
+    function closeAnalysisSettingsModal() {
+      const modal = document.getElementById('analysisSettingsModal');
+      if (modal.classList.contains('hidden')) return;
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('overflow-hidden');
+      document.getElementById('refreshOutlookButton').focus();
+    }
+
+    async function submitAnalysisSettings(event) {
+      event.preventDefault();
+      const timeValue = document.getElementById('analysisStartTime').value;
+      const error = document.getElementById('analysisSettingsError');
+      const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(timeValue);
+      if (!match) {
+        error.innerText = 'Saisissez une heure de début valide.';
+        error.classList.remove('hidden');
+        return;
+      }
+
+      const startAt = new Date();
+      startAt.setHours(Number(match[1]), Number(match[2]), 0, 0);
+      if (startAt.getTime() > Date.now()) {
+        error.innerText = 'L’heure de début ne peut pas être dans le futur.';
+        error.classList.remove('hidden');
+        return;
+      }
+
+      const separate = document.querySelector('input[name="separateEmails"]:checked').value === 'true';
+      closeAnalysisSettingsModal();
+      await refreshMonitoringFromOutlook(startAt.toISOString(), separate, timeValue);
+    }
+
     pasteArea.addEventListener('paste', (e) => {
       e.preventDefault();
+      emailExtractions = [];
+      renderEmailExtractions(emailExtractions);
+      setExtractionDisplayMode(false);
       const htmlData = e.clipboardData.getData('text/html');
       const textData = e.clipboardData.getData('text/plain');
 
@@ -780,6 +729,9 @@
     });
 
     pasteArea.addEventListener('input', () => {
+      emailExtractions = [];
+      renderEmailExtractions(emailExtractions);
+      setExtractionDisplayMode(false);
       const rawText = pasteArea.innerText;
       const parsed = parsePlainText(rawText);
       applyParsedData(parsed);
@@ -795,8 +747,8 @@
       })[character]);
     }
 
-    function parseMonitoringEmails(emails) {
-      const tables = [];
+    function parseMonitoringEmailResults(emails) {
+      const extractions = [];
       emails.forEach(email => {
         let parsed = email.html_body ? parseHTMLContent(email.html_body) : null;
         if (!parsed || parsed.rows.length === 0) {
@@ -804,22 +756,22 @@
         }
         if (!parsed || parsed.rows.length === 0) return;
 
-        tables.push({
+        extractions.push({
+          email,
           columns: ['Date de réception', 'Sujet du mail', ...parsed.columns],
-          rows: parsed.rows.map(row => [
-            email.received_at || '',
-            email.subject || '',
-            ...row
-          ])
+          rows: parsed.rows.map(row => [email.received_at || '', email.subject || '', ...row])
         });
       });
+      return extractions;
+    }
 
-      if (tables.length === 0) return null;
+    function combineEmailExtractions(extractions, startTime) {
+      if (extractions.length === 0) return null;
 
       const columns = [];
       const columnIndexes = new Map();
-      tables.forEach(table => {
-        table.columns.forEach((column, index) => {
+      extractions.forEach(extraction => {
+        extraction.columns.forEach(column => {
           const key = column.trim().toLocaleLowerCase();
           if (!columnIndexes.has(key)) {
             columnIndexes.set(key, columns.length);
@@ -829,10 +781,10 @@
       });
 
       const rows = [];
-      tables.forEach(table => {
-        table.rows.forEach(row => {
+      extractions.forEach(extraction => {
+        extraction.rows.forEach(row => {
           const mergedRow = Array(columns.length).fill('');
-          table.columns.forEach((column, index) => {
+          extraction.columns.forEach((column, index) => {
             mergedRow[columnIndexes.get(column.trim().toLocaleLowerCase())] = row[index] || '';
           });
           rows.push(mergedRow);
@@ -842,48 +794,568 @@
       return {
         columns,
         rows,
-        source: `Outlook · ${emails.length} e-mails reçus dans les 4 dernières heures`
+        source: `Outlook · ${extractions.length} e-mail(s) avec tableau depuis ${startTime}`
       };
     }
 
-    async function refreshMonitoringFromOutlook() {
+    function emailStatusOptions(extraction) {
+      const statusColumnIndex = extraction.columns.findIndex(column => /stat|etat|status/i.test(column));
+      extraction.statusColumnIndex = statusColumnIndex;
+      if (statusColumnIndex === -1) return [];
+
+      const options = new Map();
+      extraction.rows.forEach(row => {
+        const label = (row[statusColumnIndex] || '').trim();
+        if (!label) return;
+        const key = label.toLocaleLowerCase();
+        if (!options.has(key)) options.set(key, { key, label, count: 0 });
+        options.get(key).count += 1;
+      });
+      return Array.from(options.values());
+    }
+
+    function visibleEmailRows(extraction) {
+      if (extraction.statusColumnIndex === -1) return extraction.rows;
+      return extraction.rows.filter(row =>
+        !extraction.excludedStatuses.has((row[extraction.statusColumnIndex] || '').trim().toLocaleLowerCase())
+      );
+    }
+
+    function renderEmailExtractionRows(extraction, tbody, countLabel) {
+      const rows = visibleEmailRows(extraction);
+      tbody.innerHTML = '';
+      if (rows.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = extraction.columns.length;
+        td.className = 'px-3 py-6 text-center text-zinc-500';
+        td.innerText = 'Aucun flux affiché : tous les statuts sont exclus.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      } else {
+        rows.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-zinc-100 last:border-0';
+          extraction.columns.forEach((column, index) => {
+            const value = row[index] || '';
+            const td = document.createElement('td');
+            td.className = 'px-3 py-2 text-zinc-700';
+            if (index === extraction.statusColumnIndex) {
+              const badge = document.createElement('span');
+              badge.className = `status-pill ${statusStyleClass(value)}`;
+              badge.innerText = value.replace(/[✅❌⏳]/g, '').trim() || '-';
+              td.appendChild(badge);
+            } else if (/erreur|error/i.test(column) && value.trim()) {
+              const errorText = document.createElement('span');
+              errorText.className = 'error-cell rounded px-1.5 py-0.5 font-medium';
+              errorText.innerText = value;
+              td.appendChild(errorText);
+            } else if (/warning|warn|avertissement/i.test(column) && value.trim()) {
+              const warningText = document.createElement('span');
+              warningText.className = 'status-pill status-warning';
+              warningText.innerText = value;
+              td.appendChild(warningText);
+            } else {
+              td.innerText = value || '-';
+            }
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+      countLabel.innerText = `${rows.length} / ${extraction.rows.length} flux affichés`;
+    }
+
+    function renderEmailExtractions(extractions) {
+      const section = document.getElementById('emailBlocksSection');
+      section.innerHTML = '';
+      extractions.forEach((extraction, extractionIndex) => {
+        extraction.excludedStatuses = extraction.excludedStatuses || new Set();
+        const statusOptions = emailStatusOptions(extraction);
+        const card = document.createElement('article');
+        card.className = 'overflow-hidden rounded-xl border border-slate-200 bg-white';
+
+        const heading = document.createElement('div');
+        heading.className = 'flex flex-col gap-2 border-b border-slate-200 p-4 sm:flex-row sm:items-start sm:justify-between';
+        const metadata = document.createElement('div');
+        const subject = document.createElement('h3');
+        subject.className = 'font-semibold text-zinc-900';
+        subject.innerText = extraction.email.subject || '(Sans sujet)';
+        const received = document.createElement('p');
+        received.className = 'mt-1 text-xs text-zinc-500';
+        received.innerText = `Reçu le ${extraction.email.received_at || 'date inconnue'} · ${extraction.rows.length} flux extraits`;
+        metadata.append(subject, received);
+
+        const exportButton = document.createElement('button');
+        exportButton.type = 'button';
+        exportButton.className = 'shrink-0 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium';
+        exportButton.innerText = 'Exporter cet e-mail en CSV';
+        exportButton.addEventListener('click', () => exportEmailExtraction(extractionIndex));
+        const exportExcelButton = document.createElement('button');
+        exportExcelButton.type = 'button';
+        exportExcelButton.className = 'shrink-0 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium';
+        exportExcelButton.innerText = 'Excel (.xlsx)';
+        exportExcelButton.setAttribute('aria-label', `Exporter le bloc ${extractionIndex + 1} en Excel`);
+        exportExcelButton.addEventListener('click', () => exportEmailWorkbook(extractionIndex));
+        const exportButtons = document.createElement('div');
+        exportButtons.className = 'flex flex-wrap gap-2';
+        exportButtons.append(exportButton, exportExcelButton);
+        heading.append(metadata, exportButtons);
+
+        const filterPanel = document.createElement('fieldset');
+        filterPanel.className = 'border-b border-zinc-200 bg-zinc-50 px-4 py-3';
+        const legend = document.createElement('legend');
+        legend.className = 'text-xs font-semibold text-zinc-700';
+        legend.innerText = 'Statuts présents · décochez pour exclure';
+        filterPanel.appendChild(legend);
+
+        const filterHeading = document.createElement('div');
+        filterHeading.className = 'mb-2 flex flex-wrap items-center justify-between gap-2';
+        const countLabel = document.createElement('span');
+        countLabel.className = 'text-xs text-zinc-500';
+        countLabel.innerText = `${extraction.rows.length} / ${extraction.rows.length} flux affichés`;
+        filterHeading.appendChild(countLabel);
+        filterPanel.appendChild(filterHeading);
+
+        if (statusOptions.length > 0) {
+          const optionsContainer = document.createElement('div');
+          optionsContainer.className = 'flex flex-wrap items-center gap-x-4 gap-y-2';
+          statusOptions.forEach(option => {
+            const label = document.createElement('label');
+            label.className = 'inline-flex cursor-pointer items-center gap-2 text-xs';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = !extraction.excludedStatuses.has(option.key);
+            checkbox.setAttribute(
+              'aria-label',
+              `Inclure le statut ${option.label} dans le bloc ${extractionIndex + 1} (${extraction.email.subject || 'Sans sujet'})`
+            );
+            checkbox.addEventListener('change', () => {
+              if (checkbox.checked) extraction.excludedStatuses.delete(option.key);
+              else extraction.excludedStatuses.add(option.key);
+              renderEmailExtractionRows(extraction, tbody, countLabel);
+            });
+            const badge = document.createElement('span');
+            badge.className = `status-pill ${statusStyleClass(option.label)}`;
+            badge.innerText = option.label;
+            const count = document.createElement('span');
+            count.className = 'text-zinc-500';
+            count.innerText = `(${option.count})`;
+            label.append(checkbox, badge, count);
+            optionsContainer.appendChild(label);
+          });
+
+          const restoreButton = document.createElement('button');
+          restoreButton.type = 'button';
+          restoreButton.className = 'rounded border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700';
+          restoreButton.innerText = 'Tout réinclure';
+          restoreButton.addEventListener('click', () => {
+            extraction.excludedStatuses.clear();
+            optionsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+              checkbox.checked = true;
+            });
+            renderEmailExtractionRows(extraction, tbody, countLabel);
+          });
+          optionsContainer.appendChild(restoreButton);
+          filterPanel.appendChild(optionsContainer);
+        } else {
+          const emptyStatus = document.createElement('p');
+          emptyStatus.className = 'text-xs text-zinc-500';
+          emptyStatus.innerText = 'Aucune colonne de statut détectée dans cet e-mail.';
+          filterPanel.appendChild(emptyStatus);
+        }
+
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'max-h-96 overflow-auto';
+        const table = document.createElement('table');
+        table.className = 'w-full border-collapse text-left text-xs';
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        headerRow.className = 'sticky top-0 border-b border-zinc-200 bg-zinc-100';
+        extraction.columns.forEach(column => {
+          const th = document.createElement('th');
+          th.className = 'px-3 py-2 font-semibold text-zinc-700';
+          th.innerText = column;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        const tbody = document.createElement('tbody');
+        renderEmailExtractionRows(extraction, tbody, countLabel);
+        table.append(thead, tbody);
+        tableContainer.appendChild(table);
+        card.append(heading, filterPanel, tableContainer);
+        section.appendChild(card);
+      });
+      if (extractions.length > 0) {
+        const workbookActions = document.createElement('div');
+        workbookActions.className = 'flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between';
+        const workbookHint = document.createElement('p');
+        workbookHint.className = 'text-xs text-zinc-600';
+        workbookHint.innerText = 'Un onglet par e-mail · nom basé sur le titre du bloc · statuts décochés exclus.';
+        const workbookButton = document.createElement('button');
+        workbookButton.type = 'button';
+        workbookButton.className = 'shrink-0 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white';
+        workbookButton.innerText = 'Exporter tous les blocs en Excel (.xlsx)';
+        workbookButton.addEventListener('click', exportEmailWorkbook);
+        workbookActions.append(workbookHint, workbookButton);
+        section.appendChild(workbookActions);
+      }
+      section.classList.toggle('hidden', extractions.length === 0);
+    }
+
+    function exportEmailExtraction(index) {
+      const extraction = emailExtractions[index];
+      if (!extraction) return;
+      const csvRows = [extraction.columns, ...visibleEmailRows(extraction)].map(row =>
+        row.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(';')
+      );
+      const blob = new Blob(['\uFEFF' + csvRows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `monitoring_email_${index + 1}_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function xmlEscape(value) {
+      return String(value == null ? '' : value)
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
+    function excelWorksheetName(title, usedNames) {
+      let base = String(title || 'Feuille')
+        .replace(/^\s*#+\s*/, '')
+        .replace(/\bRAID\b/gi, ' ')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\[\]:*?/\\]/g, '_')
+        .replace(/[^A-Za-z0-9 _-]/g, '_')
+        .replace(/[\s-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .replace(/^'+|'+$/g, '');
+      if (!base) base = 'Feuille';
+
+      let name = base.slice(0, 31);
+      let suffix = 2;
+      while (usedNames.has(name.toLocaleLowerCase())) {
+        const suffixText = `_${suffix}`;
+        name = `${base.slice(0, 31 - suffixText.length)}${suffixText}`;
+        suffix += 1;
+      }
+      usedNames.add(name.toLocaleLowerCase());
+      return name;
+    }
+
+    function excelColumnName(columnNumber) {
+      let name = '';
+      let number = columnNumber;
+      while (number > 0) {
+        const remainder = (number - 1) % 26;
+        name = String.fromCharCode(65 + remainder) + name;
+        number = Math.floor((number - 1) / 26);
+      }
+      return name;
+    }
+
+    function spreadsheetRowsXml(rows, columns) {
+      return rows.map((row, rowIndex) => {
+        const cells = row.map((value, columnIndex) => {
+          const cellReference = `${excelColumnName(columnIndex + 1)}${rowIndex + 1}`;
+          let style = '';
+          if (rowIndex > 0) {
+            const column = columns[columnIndex] || '';
+            if (/stat|etat|status/i.test(column)) {
+              const statusClass = statusStyleClass(value);
+              const styleId = statusClass === 'status-error' ? 1 :
+                (statusClass === 'status-warning' || statusClass === 'status-progress') ? 2 :
+                  statusClass === 'status-ok' ? 3 : 0;
+              if (styleId) style = ` s="${styleId}"`;
+            } else if (/erreur|error/i.test(column) && String(value || '').trim()) {
+              style = ' s="1"';
+            } else if (/warning|warn|avertissement/i.test(column) && String(value || '').trim()) {
+              style = ' s="2"';
+            }
+          }
+          return `<c r="${cellReference}"${style} t="inlineStr"><is><t xml:space="preserve">${xmlEscape(value)}</t></is></c>`;
+        }).join('');
+        return `<row r="${rowIndex + 1}">${cells}</row>`;
+      }).join('');
+    }
+
+    function workbookStylesXml() {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFB91C1C"/><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFB45309"/><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FF15803D"/><sz val="11"/><name val="Calibri"/></font></fonts>` +
+        `<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFE1E1"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFE7C2"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE3F5E9"/><bgColor indexed="64"/></patternFill></fill></fills>` +
+        `<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>` +
+        `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
+        `<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="3" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>` +
+        `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+    }
+
+    function downloadWorkbook(sheets, fileName) {
+      const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>` +
+        sheets.map((sheet, index) => `<sheet name="${xmlEscape(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`).join('') +
+        `</sheets></workbook>`;
+      const workbookRelationships = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        sheets.map((sheet, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`).join('') +
+        `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+        `</Relationships>`;
+      const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>` +
+        `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
+        `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>` +
+        sheets.map((sheet, index) => `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') +
+        `</Types>`;
+      const rootRelationships = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+      const files = [
+        { name: '[Content_Types].xml', content: contentTypes },
+        { name: '_rels/.rels', content: rootRelationships },
+        { name: 'xl/workbook.xml', content: workbookXml },
+        { name: 'xl/_rels/workbook.xml.rels', content: workbookRelationships },
+        { name: 'xl/styles.xml', content: workbookStylesXml() },
+        ...sheets.map((sheet, index) => ({
+          name: `xl/worksheets/sheet${index + 1}.xml`,
+          content: sheet.xml
+        }))
+      ];
+      const blob = createXlsxBlob(files);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function crc32(bytes) {
+      let crc = 0xFFFFFFFF;
+      for (let index = 0; index < bytes.length; index += 1) {
+        crc ^= bytes[index];
+        for (let bit = 0; bit < 8; bit += 1) {
+          crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+        }
+      }
+      return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    function createXlsxBlob(files) {
+      if (files.length > 65535) throw new Error('Le classeur contient trop de feuilles.');
+      const encoder = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let localOffset = 0;
+
+      files.forEach(file => {
+        const name = encoder.encode(file.name);
+        const data = encoder.encode(file.content);
+        const checksum = crc32(data);
+        const localHeader = new Uint8Array(30 + name.length);
+        const localView = new DataView(localHeader.buffer);
+        localView.setUint32(0, 0x04034B50, true);
+        localView.setUint16(4, 20, true);
+        localView.setUint16(6, 0x0800, true);
+        localView.setUint16(8, 0, true);
+        localView.setUint16(10, 0, true);
+        localView.setUint16(12, 33, true);
+        localView.setUint32(14, checksum, true);
+        localView.setUint32(18, data.length, true);
+        localView.setUint32(22, data.length, true);
+        localView.setUint16(26, name.length, true);
+        localView.setUint16(28, 0, true);
+        localHeader.set(name, 30);
+        localParts.push(localHeader, data);
+
+        const centralHeader = new Uint8Array(46 + name.length);
+        const centralView = new DataView(centralHeader.buffer);
+        centralView.setUint32(0, 0x02014B50, true);
+        centralView.setUint16(4, 20, true);
+        centralView.setUint16(6, 20, true);
+        centralView.setUint16(8, 0x0800, true);
+        centralView.setUint16(10, 0, true);
+        centralView.setUint16(12, 0, true);
+        centralView.setUint16(14, 33, true);
+        centralView.setUint32(16, checksum, true);
+        centralView.setUint32(20, data.length, true);
+        centralView.setUint32(24, data.length, true);
+        centralView.setUint16(28, name.length, true);
+        centralView.setUint16(30, 0, true);
+        centralView.setUint16(32, 0, true);
+        centralView.setUint16(34, 0, true);
+        centralView.setUint16(36, 0, true);
+        centralView.setUint32(38, 0, true);
+        centralView.setUint32(42, localOffset, true);
+        centralHeader.set(name, 46);
+        centralParts.push(centralHeader);
+        localOffset += localHeader.length + data.length;
+      });
+
+      const centralSize = centralParts.reduce((size, part) => size + part.length, 0);
+      if (localOffset + centralSize > 0xFFFFFFFF) throw new Error('Le classeur dépasse la taille maximale prise en charge.');
+      const endRecord = new Uint8Array(22);
+      const endView = new DataView(endRecord.buffer);
+      endView.setUint32(0, 0x06054B50, true);
+      endView.setUint16(4, 0, true);
+      endView.setUint16(6, 0, true);
+      endView.setUint16(8, files.length, true);
+      endView.setUint16(10, files.length, true);
+      endView.setUint32(12, centralSize, true);
+      endView.setUint32(16, localOffset, true);
+      endView.setUint16(20, 0, true);
+
+      return new Blob([...localParts, ...centralParts, endRecord], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+    }
+
+    function exportEmailWorkbook(extractionIndex) {
+      const extractions = Number.isInteger(extractionIndex)
+        ? [emailExtractions[extractionIndex]].filter(Boolean)
+        : emailExtractions;
+      if (extractions.length === 0) {
+        showToast('Aucun bloc à exporter.');
+        return;
+      }
+
+      try {
+        const usedNames = new Set();
+        const sheets = extractions.map((extraction, index) => {
+          const columns = extraction.columns;
+          const rows = [columns, ...visibleEmailRows(extraction)];
+          if (rows.length > 1048576) {
+            throw new Error(`Le bloc ${index + 1} dépasse la limite de lignes Excel.`);
+          }
+          const name = excelWorksheetName(extraction.email.subject, usedNames);
+          const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+            `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${spreadsheetRowsXml(rows, columns)}</sheetData></worksheet>`;
+          return { name, xml };
+        });
+
+        downloadWorkbook(sheets, Number.isInteger(extractionIndex)
+          ? `monitoring_raid_bloc_${extractionIndex + 1}_${new Date().toISOString().slice(0, 10)}.xlsx`
+          : `monitoring_raid_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        showToast(Number.isInteger(extractionIndex)
+          ? 'Bloc exporté en Excel avec les couleurs de statut.'
+          : `${sheets.length} feuille(s) Excel exportée(s) avec les couleurs de statut.`);
+      } catch (error) {
+        showToast(`Export Excel impossible : ${error.message}`);
+      }
+    }
+
+    function setExtractionDisplayMode(separate) {
+      document.getElementById('aggregateFiltersPanel').classList.toggle('hidden', separate);
+      document.getElementById('aggregateTablePanel').classList.toggle('hidden', separate);
+      const section = document.getElementById('emailBlocksSection');
+      section.classList.toggle('hidden', !separate || emailExtractions.length === 0);
+    }
+
+    function receivedAtTimestamp(receivedAt) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/.exec(String(receivedAt || ''));
+      if (!match) return NaN;
+
+      const parts = match.slice(1).map(Number);
+      const date = new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
+      if (date.getFullYear() !== parts[0] || date.getMonth() !== parts[1] - 1 ||
+          date.getDate() !== parts[2] || date.getHours() !== parts[3] ||
+          date.getMinutes() !== parts[4] || date.getSeconds() !== parts[5]) {
+        return NaN;
+      }
+      return date.getTime();
+    }
+
+    function emailsReceivedSince(emails, startAt) {
+      const cutoff = new Date(startAt).getTime();
+      if (!Number.isFinite(cutoff)) throw new Error('L’heure de début de l’analyse est invalide.');
+
+      return emails.filter(email => {
+        if (!email || typeof email !== 'object') {
+          throw new Error('La réponse Outlook contient un e-mail invalide.');
+        }
+        const receivedAt = receivedAtTimestamp(email.received_at);
+        if (!Number.isFinite(receivedAt)) {
+          throw new Error(`Date de réception invalide pour l’e-mail « ${email.subject || '(sans sujet)'} ».`);
+        }
+        return receivedAt >= cutoff;
+      });
+    }
+
+    async function refreshMonitoringFromOutlook(startAt, separate, startTime) {
       const button = document.getElementById('refreshOutlookButton');
       const status = document.getElementById('outlookFetchStatus');
       button.disabled = true;
-      status.innerText = 'Lecture du dossier Outlook « Monitoring RAID »…';
+      document.getElementById('startAnalysisButton').disabled = true;
+      document.getElementById('analysisWindowSummary').innerText = `Dossier Monitoring RAID · depuis ${startTime}`;
+      status.innerText = `Lecture du dossier Outlook « Monitoring RAID » depuis ${startTime}…`;
+      emailExtractions = [];
+      parsedColumns = [];
+      parsedRows = [];
+      renderEmailExtractions(emailExtractions);
+      setExtractionDisplayMode(false);
+      document.getElementById('resultsSection').classList.add('hidden');
+      document.getElementById('loadedDataSummary').innerText = 'Collecte Outlook en cours…';
+      document.getElementById('parseStatus').innerText = '';
 
       try {
-        const response = await fetch('/api/monitoring-raid', { cache: 'no-store' });
+        const response = await fetch('/api/monitoring-raid', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ since_at: startAt })
+        });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Impossible de lire le dossier Outlook.');
 
-        const emails = Array.isArray(data.emails) ? data.emails : [];
+        const receivedEmails = Array.isArray(data.emails) ? data.emails : [];
+        const emails = emailsReceivedSince(receivedEmails, startAt);
+        const latestEmail = emails.reduce((latest, email) => {
+          return !latest || receivedAtTimestamp(email.received_at) > receivedAtTimestamp(latest.received_at)
+            ? email
+            : latest;
+        }, null);
+        emailExtractions = parseMonitoringEmailResults(emails);
+        document.getElementById('emailBlocksSection').innerHTML = '';
         if (emails.length === 0) {
           applyParsedData(null);
-          document.getElementById('loadedDataSummary').innerText = 'Aucun e-mail reçu depuis 4 h';
-          document.getElementById('parseStatus').innerText = 'Le dossier Monitoring RAID ne contient aucun e-mail dans cette période.';
+          setExtractionDisplayMode(separate);
+          document.getElementById('loadedDataSummary').innerText = `Aucun e-mail reçu depuis ${startTime}`;
+          document.getElementById('parseStatus').innerText = `Le dossier Monitoring RAID ne contient aucun e-mail depuis ${startTime}.`;
           status.innerText = `Dossier ${data.folder} analysé · ${data.file}`;
           return;
         }
 
-        const parsed = parseMonitoringEmails(emails);
+        const parsed = combineEmailExtractions(emailExtractions, startTime);
         if (!parsed) {
           applyParsedData(null);
-          document.getElementById('loadedDataSummary').innerText = `${emails.length} e-mail(s) reçu(s) depuis 4 h · aucun tableau reconnu`;
+          setExtractionDisplayMode(separate);
+          document.getElementById('loadedDataSummary').innerText = `${emails.length} e-mail(s) reçu(s) depuis ${startTime} · aucun tableau reconnu`;
           status.innerText = `Dossier ${data.folder} analysé · collecte enregistrée dans ${data.file}`;
           return;
         }
 
         applyParsedData(parsed);
+        renderEmailExtractions(emailExtractions);
+        setExtractionDisplayMode(separate);
         document.getElementById('loadedDataSummary').innerText =
-          `${emails.length} e-mail(s) des 4 dernières heures · ${parsed.rows.length} flux extraits`;
+          `${emails.length} e-mail(s) depuis ${startTime} · ${parsed.rows.length} flux extraits`;
         document.getElementById('parseStatus').innerText =
           `${parsed.rows.length} flux extraits de ${emails.length} e-mail(s). Collecte enregistrée dans ${data.file}.`;
-        status.innerText = `Dernier e-mail reçu : ${data.latest_email ? data.latest_email.received_at : 'aucun'}`;
+        status.innerText = `Dernier e-mail reçu depuis ${startTime} : ${latestEmail ? latestEmail.received_at : 'aucun'}`;
       } catch (error) {
+        document.getElementById('loadedDataSummary').innerText = 'Collecte Outlook échouée';
         status.innerText = `Erreur de récupération Outlook : ${error.message}`;
       } finally {
         button.disabled = false;
+        document.getElementById('startAnalysisButton').disabled = false;
       }
     }
 
@@ -925,6 +1397,9 @@
 
     function clearArea() {
       pasteArea.innerHTML = '';
+      emailExtractions = [];
+      renderEmailExtractions(emailExtractions);
+      setExtractionDisplayMode(false);
       parsedColumns = [];
       parsedRows = [];
       document.getElementById('resultsSection').classList.add('hidden');
@@ -933,7 +1408,7 @@
     }
 
     function updateKPIs() {
-      const statusColIdx = parsedColumns.findIndex(c => /stat/i.test(c));
+      const statusColIdx = parsedColumns.findIndex(c => /stat|etat|status/i.test(c));
       const total = parsedRows.length;
       let ok = 0, nok = 0, progress = 0, autre = 0;
 
@@ -997,7 +1472,7 @@
     function renderTable() {
       const tbody = document.getElementById('tableBody');
       const searchQuery = (document.getElementById('searchInput').value || '').toLowerCase();
-      const statusColIdx = parsedColumns.findIndex(c => /stat/i.test(c));
+      const statusColIdx = parsedColumns.findIndex(c => /stat|etat|status/i.test(c));
       const timeColIdx = getTimeColumnIndex();
 
       const selectedStatuses = getSelectedStatuses();
@@ -1064,13 +1539,7 @@
             td.className = 'px-4 py-2.5 whitespace-nowrap text-xs';
 
             if (idx === statusColIdx) {
-              const norm = normalizeStatus(cell);
-              let badgeClass = 'badge-other';
-              if (norm === 'OK') badgeClass = 'badge-ok';
-              else if (norm === 'NOK') badgeClass = 'badge-nok';
-              else if (norm === 'EN_COURS') badgeClass = 'badge-progress';
-
-              td.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${badgeClass}">${escapeHtml(cell.replace(/[✅❌⏳]/g, '').trim())}</span>`;
+              td.innerHTML = `<span class="status-pill ${statusStyleClass(cell)}">${escapeHtml(cell.replace(/[✅❌⏳]/g, '').trim())}</span>`;
             } else if (idx === timeColIdx && cell.trim()) {
               const mins = parseDurationToMinutes(cell);
               td.innerHTML = `
@@ -1082,7 +1551,9 @@
                 </div>
               `;
             } else if (/erreur|error/i.test(parsedColumns[idx]) && cell.trim()) {
-              td.innerHTML = `<span class="text-rose-400 font-medium">${escapeHtml(cell)}</span>`;
+              td.innerHTML = `<span class="error-cell rounded px-1.5 py-0.5 font-medium">${escapeHtml(cell)}</span>`;
+            } else if (/warning|warn|avertissement/i.test(parsedColumns[idx]) && cell.trim()) {
+              td.innerHTML = `<span class="status-pill status-warning">${escapeHtml(cell)}</span>`;
             } else {
               td.innerText = cell || '-';
             }
@@ -1147,6 +1618,38 @@
       showToast('Fichier CSV téléchargé avec succès !');
     }
 
+    function exportGlobalWorkbook() {
+      if (parsedRows.length === 0) {
+        showToast('Aucun tableau à exporter.');
+        return;
+      }
+
+      try {
+        const timeColIdx = getTimeColumnIndex();
+        const columns = [...parsedColumns];
+        if (timeColIdx !== -1) columns.push('Minutes_Equivalentes');
+        const rows = parsedRows.map(row => {
+          const output = [...row];
+          if (timeColIdx !== -1) output.push(parseDurationToMinutes(row[timeColIdx]) || 0);
+          return output;
+        });
+        if (rows.length + 1 > 1048576) {
+          throw new Error('Le tableau dépasse la limite de lignes Excel.');
+        }
+
+        const sheetRows = [columns, ...rows];
+        const sheets = [{
+          name: 'Monitoring_RAID',
+          xml: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+            `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${spreadsheetRowsXml(sheetRows, columns)}</sheetData></worksheet>`
+        }];
+        downloadWorkbook(sheets, `monitoring_flux_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        showToast('Tableau global exporté en Excel avec les couleurs de statut.');
+      } catch (error) {
+        showToast(`Export Excel impossible : ${error.message}`);
+      }
+    }
+
     function showToast(msg) {
       const toast = document.getElementById('toast');
       toast.innerText = msg;
@@ -1192,6 +1695,9 @@ WDT HK Database\t✅ OK\t2026-11-09 10:49:22\t3d:7h:10m:40s`
     function loadExample(num) {
       const sample = (EXAMPLES[num] || '').replace(/[✅❌⏳]/g, '');
       pasteArea.innerText = sample;
+      emailExtractions = [];
+      renderEmailExtractions(emailExtractions);
+      setExtractionDisplayMode(false);
       const parsed = parsePlainText(sample);
       applyParsedData(parsed);
       document.getElementById('outlookFetchStatus').innerText = 'Exemple de démonstration chargé.';
@@ -1200,7 +1706,9 @@ WDT HK Database\t✅ OK\t2026-11-09 10:49:22\t3d:7h:10m:40s`
 
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('exampleSlot').appendChild(document.getElementById('exampleButtons'));
-      refreshMonitoringFromOutlook();
+      document.getElementById('analysisStartTime').value = defaultAnalysisStartTime();
+      document.getElementById('analysisSettingsForm').addEventListener('submit', submitAnalysisSettings);
+      openAnalysisSettingsModal();
     });
   </script>
 </body>

@@ -53,17 +53,24 @@ def _resolve_inbox_folder(inbox: Any, folder_path: str) -> Any:
     return folder
 
 
+def _local_naive(value: datetime) -> datetime:
+    return value.astimezone().replace(tzinfo=None) if value.tzinfo is not None else value
+
+
 def _received_datetime(value: Any) -> Tuple[datetime, str]:
     if isinstance(value, datetime):
-        return value, value.strftime("%Y-%m-%d %H:%M:%S")
-    if value is None:
+        parsed = value
+    elif value is not None:
+        text = str(value)
+        try:
+            parsed = datetime.fromisoformat(text)
+        except ValueError as exc:
+            raise MailcheckError(f"Date de réception Outlook invalide : {text}") from exc
+    else:
         raise MailcheckError("Un e-mail ne fournit pas de date de réception.")
-    text = str(value)
-    try:
-        parsed = datetime.fromisoformat(text)
-    except ValueError as exc:
-        raise MailcheckError(f"Date de réception Outlook invalide : {text}") from exc
-    return parsed, text
+
+    local_received = _local_naive(parsed)
+    return local_received, local_received.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _safe_collection_path(folder_path: str) -> Path:
@@ -85,11 +92,24 @@ def collect_folder(
     folder_path: str,
     since_hours: Optional[int] = None,
     include_html: bool = False,
+    since_at: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """Read mail items from an Inbox subfolder and persist a JSON snapshot."""
     folder_path = validate_folder_path(folder_path)
+    if since_hours is not None and since_at is not None:
+        raise MailcheckError("Indiquez soit une durée, soit une heure de début, pas les deux.")
     if since_hours is not None and (not isinstance(since_hours, int) or not 1 <= since_hours <= 168):
         raise MailcheckError("La période de collecte doit être comprise entre 1 et 168 heures.")
+    if since_at is not None and not isinstance(since_at, datetime):
+        raise MailcheckError("L’heure de début de collecte est invalide.")
+
+    now = datetime.now().astimezone().replace(tzinfo=None)
+    cutoff = _local_naive(since_at) if since_at is not None else None
+    if cutoff is not None and cutoff > now:
+        raise MailcheckError("L’heure de début de collecte ne peut pas être dans le futur.")
+    if cutoff is None and since_hours is not None:
+        cutoff = now - timedelta(hours=since_hours)
+
     try:
         import pythoncom
         import win32com.client
@@ -115,9 +135,6 @@ def collect_folder(
         messages = []
         latest_sort_key = None
         latest_email = None
-        cutoff = None
-        if since_hours is not None:
-            cutoff = datetime.now().astimezone().replace(tzinfo=None) - timedelta(hours=since_hours)
 
         # La lecture se fait en sens inverse, sans déplacer ni modifier les éléments.
         for index in range(items.Count, 0, -1):
@@ -126,11 +143,7 @@ def collect_folder(
                 continue
 
             received, received_text = _received_datetime(item.ReceivedTime)
-            comparable_received = (
-                received.astimezone().replace(tzinfo=None)
-                if received.tzinfo is not None
-                else received
-            )
+            comparable_received = _local_naive(received)
             if cutoff is not None and comparable_received < cutoff:
                 continue
 
@@ -159,6 +172,7 @@ def collect_folder(
         snapshot = {
             "folder": str(folder.FolderPath),
             "collected_at": collected_at.isoformat(timespec="seconds"),
+            "window_start": cutoff.isoformat(timespec="seconds") if cutoff is not None else None,
             "count": len(messages),
             "latest_email": latest_email,
             "emails": messages,
@@ -182,6 +196,7 @@ def collect_folder(
             "folder": str(folder.FolderPath),
             "count": len(messages),
             "latest_email": latest_email,
+            "window_start": cutoff.isoformat(timespec="seconds") if cutoff is not None else None,
             "file": str(output_file.relative_to(PROJECT_ROOT)),
         }
         if include_html:

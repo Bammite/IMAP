@@ -1,5 +1,6 @@
 """Local web server for the Mailcheck Outlook collector."""
 
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
@@ -24,6 +25,9 @@ STATIC_PAGES = {
     "/help.html": APP_DIRECTORY / "help.html",
     "/mailcheck": APP_DIRECTORY / "index.html",
     "/mailcheck/": APP_DIRECTORY / "index.html",
+}
+STATIC_ASSETS = {
+    "/dashboard.css": PROJECT_DIRECTORY / "dashboard.css",
 }
 
 
@@ -75,6 +79,23 @@ class MailcheckHandler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": "Erreur inattendue pendant l'analyse RAID. Consultez la console."})
             return
 
+        asset_path = STATIC_ASSETS.get(self.path)
+        if asset_path is not None:
+            try:
+                body = asset_path.read_bytes()
+            except OSError:
+                logging.exception("Impossible de lire la feuille de style du tableau de bord.")
+                self.send_error(500, "Feuille de style indisponible")
+                return
+
+            self.send_response(200)
+            self.send_header("Content-Type", "text/css; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         page_path = STATIC_PAGES.get(self.path)
         if page_path is None:
             self.send_error(404, "Ressource introuvable")
@@ -120,6 +141,35 @@ class MailcheckHandler(BaseHTTPRequestHandler):
             return
 
         try:
+            if self.path == "/api/monitoring-raid":
+                since_at_value = request_data.get("since_at")
+                if not isinstance(since_at_value, str):
+                    raise MailcheckError("L’heure de début de l’analyse est obligatoire.")
+                try:
+                    since_at = datetime.fromisoformat(since_at_value)
+                except ValueError as exc:
+                    raise MailcheckError("L’heure de début de l’analyse est invalide.") from exc
+
+                raid_folder = next(
+                    (item for item in get_folders() if item["id"] == "monitoring-raid"),
+                    None,
+                )
+                if raid_folder is None:
+                    raise MailcheckError(
+                        "Le dossier de supervision RAID n'est pas configuré dans la gestion des dossiers."
+                    )
+                if not raid_folder["enabled"]:
+                    raise MailcheckError(
+                        "Le dossier de supervision RAID est désactivé dans la gestion des dossiers."
+                    )
+                result = collect_folder(
+                    raid_folder["outlook_folder"],
+                    include_html=True,
+                    since_at=since_at,
+                )
+                self._send_json(200, result)
+                return
+
             if self.path == "/api/folders":
                 folders = add_folder(
                     request_data.get("outlook_folder"),

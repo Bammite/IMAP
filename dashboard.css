@@ -1,0 +1,233 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.bg-slate-900 {
+  margin: 0;
+  padding: 1.5rem;
+  font-family: Arial, sans-serif;
+}
+
+.max-w-7xl {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.badge-ok,
+.badge-nok,
+.badge-progress,
+.badge-other {
+  background-color: #f4f4f5;
+  color: #27272a;
+  border: 1px solid #e4e4e7;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e4e4e7;
+  border-radius: 9999px;
+  background: #f4f4f5;
+  color: #3f3f46;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1rem;
+}
+
+.status-pill.status-error,
+.error-cell {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c !important;
+}
+
+.status-pill.status-ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d !important;
+}
+
+.status-pill.status-progress,
+.status-pill.status-warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309 !important;
+}
+
+body.bg-slate-900 {
+  background: #f4f4f5 !important;
+  color: #18181b !important;
+}
+
+[class*="bg-slate-800"] {
+  background-color: #ffffff !important;
+}
+
+[class~="bg-slate-900"],
+[class~="bg-slate-950"] {
+  background-color: #f4f4f5 !important;
+}
+
+[class*="text-slate-100"],
+[class*="text-slate-200"],
+[class~="text-white"] {
+  color: #18181b !important;
+}
+
+[class*="text-slate-"] {
+  color: #71717a !important;
+}
+
+[class*="text-slate-100"],
+[class*="text-slate-200"] {
+  color: #27272a !important;
+}
+
+[class*="text-rose-"],
+[class*="text-amber-"],
+[class*="text-emerald-"],
+[class*="text-blue-"] {
+  color: #3f3f46 !important;
+}
+
+[class*="border-slate-"],
+[class*="border-rose-"],
+[class*="border-amber-"],
+[class*="border-emerald-"],
+[class*="border-blue-"] {
+  border-color: #e4e4e7 !important;
+}
+
+[class*="bg-rose-"],
+[class*="bg-amber-"],
+[class*="bg-emerald-"],
+[class*="bg-blue-"] {
+  background-color: #f4f4f5 !important;
+}
+
+#lbl_status_nok,
+#lbl_status_progress,
+#lbl_status_ok {
+  background: #f4f4f5 !important;
+  border-color: #e4e4e7 !important;
+}
+
+#richPasteArea,
+input,
+select {
+  color: #18181b !important;
+  caret-color: #18181b;
+}
+
+#richPasteArea {
+  background: #ffffff !important;
+  border-color: #d4d4d8 !important;
+  line-height: 1.6;
+}
+
+#richPasteArea:focus {
+  border-color: #71717a !important;
+  box-shadow: 0 0 0 3px rgb(24 24 27 / 8%);
+}
+
+input,
+select {
+  background-color: #ffffff !important;
+  border-color: #d4d4d8 !important;
+  border-radius: 0.625rem;
+}
+
+input:focus,
+select:focus {
+  border-color: #71717a !important;
+  box-shadow: 0 0 0 2px rgb(24 24 27 / 8%);
+  outline: none;
+}
+
+button {
+  color: #3f3f46;
+}
+
+button:hover {
+  background-color: #e4e4e7 !important;
+  color: #18181b !important;
+}
+
+.text-white {
+  color: #f8f8fc !important;
+}
+
+#toast {
+  background: #18181b !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgb(24 24 27 / 16%) !important;
+}
+
+#tableHeaderRow th {
+  background: #f4f4f5 !important;
+  color: #52525b !important;
+}
+
+#tableBody tr:hover {
+  background: #fafafa !important;
+}
+
+#openImportButton {
+  background: #18181b !important;
+  color: #ffffff !important;
+}
+
+#openImportButton:hover {
+  background: #3f3f46 !important;
+  color: #ffffff !important;
+}
+
+#inputModal,
+#analysisSettingsModal {
+  position: fixed;
+  inset: 0;
+  background: rgb(24 24 27 / 48%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+#inputModal {
+  z-index: 50;
+}
+
+#analysisSettingsModal {
+  z-index: 60;
+}
+
+#analysisSettingsModal.hidden,
+#inputModal.hidden {
+  display: none !important;
+}
+
+#analysisSettingsPanel,
+#importModalPanel {
+  box-shadow: 0 24px 80px rgb(24 24 27 / 20%);
+}
+
+#importModalPanel {
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
+}
+
+#richPasteArea:empty:before {
+  content: attr(data-placeholder);
+  color: #a1a1aa;
+  font-style: italic;
+}
